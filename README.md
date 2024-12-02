@@ -102,7 +102,11 @@ void handleKey(uint8_t& key, bool& state) {
 // Initialize core and ROM data
 ChippyCore core;
 const uint8_t romData[] = { /* Your CHIP-8 ROM data */ };
-bool config[4] = { true, false, true, false }; // Quirk configuration
+bool config[4] = { true,  //Quirk 4
+                   false, //Quirk 5
+                   true,  //Quirk 6
+                   false  //Quirk 11
+                  }; // Quirk configuration
 
 void setup() {
     core.play_game(romData, sizeof(romData), drawPixel, updateScreen, handleKey, config);
