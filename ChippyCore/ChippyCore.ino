@@ -13,6 +13,7 @@ void drawPixelCallback(const uint16_t X, const uint16_t Y, bool& collision){
     // Implement your pixel drawing and collision detection logic here
 }
 
+
 // Callback function to update the screen display
 void screenUpdateCallback(bool clearScreen, bool updateScreen){
     if(clearScreen){
