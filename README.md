@@ -1,5 +1,3 @@
-Hier is een bijgewerkte versie van de README met een aantrekkelijke introductie:
-
 ---
 
 # ChippyCore Library
@@ -145,5 +143,3 @@ void togglePause() {
 - To indicate no key press/release, set `key = -1`.
 
 ---
-
-This README now includes an engaging introduction that highlights the purpose and versatility of the ChippyCore Library. Let me know if there’s anything else you'd like to tweak!
