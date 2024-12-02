@@ -2,10 +2,10 @@
 #define BITVAULT_H
 
 #include <Arduino.h>
-#include <atomic>
+//#include <atomic>
 
 // Primary template for BitVault (non-atomic version)
-template<typename T, bool enable_atomic = false>
+template<typename T>
 class BitVault {
   private:
     T bits = 0;  // Use a regular variable to hold bits
@@ -32,7 +32,7 @@ class BitVault {
         bits = 0;  // Direct assignment to clear all bits
     }
 };
-
+/*
 // Partial specialization for BitVault (atomic version)
 template<typename T>
 class BitVault<T, true> {
@@ -60,6 +60,7 @@ class BitVault<T, true> {
     void clear_all() {
         bits.store(0, std::memory_order_release);  // Clear all bits using atomic store
     }
+    
 };
-
+*/
 #endif

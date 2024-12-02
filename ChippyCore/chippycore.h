@@ -68,8 +68,8 @@ class ChippyCore{
         uint32_t last_interrupt_cycle;  ///< Timestamp of the last INTERRUPT cycle
 
         //Bit containers for state flags and keypad keys
-        BitVault<uint16_t,true> flag;
-        BitVault<uint16_t,true> keys;
+        BitVault<uint16_t> flag;
+        BitVault<uint16_t> keys;
 
         //Methods
         void initialize();
