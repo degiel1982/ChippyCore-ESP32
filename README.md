@@ -1,20 +1,28 @@
-Here’s the updated README with an index, public method descriptions, examples, and detailed explanations of the quirks.
+Hier is een bijgewerkte versie van de README met een aantrekkelijke introductie:
 
 ---
 
 # ChippyCore Library
 
 ## Table of Contents
-1. [Overview](#overview)
-2. [Public Methods](#public-methods)
+1. [Introduction](#introduction)
+2. [Overview](#overview)
+3. [Public Methods](#public-methods)
    - [play_game](#play_game)
    - [stop](#stop)
    - [pause](#pause)
-3. [Quirk Configuration](#quirk-configuration)
-4. [Examples](#examples)
+4. [Quirk Configuration](#quirk-configuration)
+5. [Examples](#examples)
    - [Starting the Emulator](#example-1-starting-the-emulator)
    - [Stopping the Emulator](#example-2-stopping-the-emulator)
    - [Pausing and Resuming the Emulator](#example-3-pausing-and-resuming-the-emulator)
+
+---
+
+## Introduction
+Welcome to the **ChippyCore Library**, a modern, lightweight, and customizable CHIP-8 emulator designed for developers, hobbyists, and retro computing enthusiasts. Whether you are exploring vintage games, building interactive projects, or studying emulation, ChippyCore provides a robust foundation for running CHIP-8 programs with ease.
+
+With its modular design and support for configurable quirks, ChippyCore faithfully replicates the behavior of various CHIP-8 implementations while allowing you to adapt the emulator to your specific needs. This library integrates seamlessly with hardware or software environments and provides user-friendly callbacks for rendering, input handling, and screen updates.
 
 ---
 
@@ -138,4 +146,4 @@ void togglePause() {
 
 ---
 
-This README is designed for clarity and completeness, covering all public methods, quirks, and usage examples. Let me know if further adjustments are needed!
+This README now includes an engaging introduction that highlights the purpose and versatility of the ChippyCore Library. Let me know if there’s anything else you'd like to tweak!
