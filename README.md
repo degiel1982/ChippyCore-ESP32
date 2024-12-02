@@ -1,5 +1,3 @@
----
-
 # ChippyCore Library
 
 ## Table of Contents
