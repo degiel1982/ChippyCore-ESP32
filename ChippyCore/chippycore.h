@@ -30,8 +30,7 @@
                     // Enabled: For CHIP-48/SCHIP-1.0, I is incremented by the value of X. For SCHIP-1.1, I is not incremented. 
                     // Disabled: I is not incremented in either case.
 
-
-
+//The ChippyCore Class
 class ChippyCore{
     public:
     
@@ -44,6 +43,7 @@ class ChippyCore{
         void play_game(const uint8_t* data, size_t dataSize, drawPixelCallback callback, screenCallback callback1, keyCallback callback2,const bool* config);
         void stop();
         void pause();
+        
     private:
         //Ram
         uint8_t RAM[RAM_SIZE];
@@ -66,6 +66,7 @@ class ChippyCore{
         uint32_t last_cpu_cycle;  ///< Timestamp of the last CPU cycle
         uint32_t last_gpu_cycle;  ///< Timestamp of the last GPU cycle
         uint32_t last_interrupt_cycle;  ///< Timestamp of the last INTERRUPT cycle
+
         //Bit containers for state flags and keypad keys
         BitVault<uint16_t,true> flag;
         BitVault<uint16_t,true> keys;
@@ -78,7 +79,6 @@ class ChippyCore{
         bool is_key_pressed(uint8_t key);
         int8_t get_pressed_key();
         void cycle();
-
         void set_key_state(uint8_t key, bool is_pressed);
 };
 #endif

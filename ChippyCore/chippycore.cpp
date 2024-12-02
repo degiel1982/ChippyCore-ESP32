@@ -1,6 +1,5 @@
 #include "chippycore.h"
 
-
 #define ROM_START_ADDRESS 0x200
 #define FONTSET_START_ADDRESS 0x50 
 #define BITMASK_X 0x0F00
@@ -16,8 +15,6 @@ void ChippyCore::play_game(const uint8_t* data, size_t dataSize, drawPixelCallba
     if(kkcb){
         kcb = kkcb;
     }
-
-
     initialize();
     flag.set(QUIRK4, config[0]);
     flag.set(QUIRK5, config[1]);
@@ -54,6 +51,7 @@ void ChippyCore::initialize(){
 void ChippyCore::load_rom(const uint8_t* data, size_t dataSize){
     memcpy(RAM + ROM_START_ADDRESS, data, dataSize);
 }
+
 //FONTSET
 void ChippyCore::load_fontset(){
     const uint8_t FONTSET[80] = {
@@ -131,6 +129,7 @@ void ChippyCore::pause(){
 bool ChippyCore::is_key_pressed(uint8_t key) {
     return key < 16 && keys.get(key) == 1; // Return true if key is within range and pressed
 }
+
 //GET VALUE OF PRESSED KEY
 int8_t ChippyCore::get_pressed_key() {
     for (uint8_t key = 0; key < 16; key++) {
@@ -140,6 +139,7 @@ int8_t ChippyCore::get_pressed_key() {
     }
     return -1; // Return -1 if no key is pressed
 }
+
 //SET THE STATE OF THE KEYS A.K.A MIMICKING A KEYPRESS/RELEASE
 void ChippyCore::set_key_state(uint8_t key, bool is_pressed){
     if (key < 16) { 
