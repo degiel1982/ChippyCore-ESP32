@@ -8,6 +8,8 @@
 #define MAX_16 16
 #define MAX_8 8
 
+
+#define IS_RUNNING 0
 #define START 1
 #define PAUSE 2
 #define CLEAR_DISPLAY 3
