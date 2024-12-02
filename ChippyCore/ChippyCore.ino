@@ -24,10 +24,9 @@ void screenUpdateCallback(bool clearScreen, bool updateScreen){
     }
 }
 
-// This callback is executed every 1ms to handle key input.
-// Since the loop() is blocked when starting a game, add additional code here to prevent blocking.
-// Example: key = 0x05 & key_state true : this presses the 5 key
-//          key = 0x05 & key_state false : this releases the 5 key
+// This callback is executed every 1ms.
+// when the emulator is running the loop is blocked from running.
+
 void loopCallback(uint8_t& key, bool& key_state){
     // Implement your key press and release logic here
 }
