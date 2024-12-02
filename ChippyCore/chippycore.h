@@ -12,14 +12,29 @@
 #define PAUSE 2
 #define CLEAR_DISPLAY 3
 
-//EMULATOR QUIRKS
-#define QUIRK4  15 //COSMAC based variants will reset VF
-#define QUIRK5  14 //CHIP-48/SCHIP-1.x don't set vX to vY, so only shift vX
-#define QUIRK6  13 
-#define QUIRK11 12 //CHIP-48/SCHIP1.0 increment I only by X, SCHIP1.1 not at all
+///***********************************************************************************************///
+///                                       EMULATOR QUIRKS                                         ///
+///                                                                                               /// 
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+#define QUIRK4 4    // COSMAC-based variants reset VF register to 0 before certain operations. 
+                    // Enabled: VF is reset to 0 before instructions that modify it. 
+                    // Disabled: VF retains its previous value before such instructions. 
+
+#define QUIRK5 5    // CHIP-48/SCHIP-1.x do not set vX to vY when shifting, so only shift vX.
+
+#define QUIRK6 6    // Wrapping or clipping behavior for sprites. 
+                    // Enabled: Sprites wrap around the screen borders. 
+                    // Disabled: Sprites are clipped at the screen edges. 
+
+#define QUIRK11 7   // Increment behavior for the I register. 
+                    // Enabled: For CHIP-48/SCHIP-1.0, I is incremented by the value of X. For SCHIP-1.1, I is not incremented. 
+                    // Disabled: I is not incremented in either case.
+
+
 
 class ChippyCore{
     public:
+    
         //Define Callbacks
         typedef void (*screenCallback)(bool clearScreen, bool updateScreen);
         typedef void (*keyCallback)(uint8_t& key_set, bool& key_state);

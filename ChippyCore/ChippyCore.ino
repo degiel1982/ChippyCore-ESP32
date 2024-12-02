@@ -1,88 +1,50 @@
 #include "chippycore.h"
-#include "roms.h"
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define OLED_RESET -1
-
-#include <Adafruit_SSD1306.h>
-
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-ChippyCore cc;
-const int scaleFactor = 2;
-
-bool quirkconfig[5] =  {   //Opcode variants
-                      false, //  QUIRK4:  COSMAC based variants will reset VF  
-                      false, //  QUIRK5:  CHIP-48/SCHIP-1.x don't set vX to vY, so only shift vX
-                      false, //  QUIRK6:  CHIP-48/SCHIP-1.x don't set vX to vY, so only shift vX
-                      false, // QUIRK11:  CHIP-48/SCHIP1.0 increment I only by X, SCHIP1.1 not at all
+// Configuration for opcode quirks in the emulator
+bool quirkconfig[5] =  {   
+                      false, //  QUIRK4: COSMAC-based variants will reset the VF register to 0 before certain operations.
+                      false, //  QUIRK5: CHIP-48/SCHIP-1.x don't set vX to vY when shifting, so only shift vX.
+                      false, //  QUIRK6: Determine behavior for sprite wrapping (enabled) or clipping (disabled).
+                      false, //  QUIRK11: CHIP-48/SCHIP1.0 increment the I register by X, SCHIP1.1 does not increment I.
                   };
 
+// Callback function to draw a pixel on the screen with collision detection
 void drawPixelCallback(const uint16_t X, const uint16_t Y, bool& collision){
-    // Perform collision detection on the original coordinates
-    bool pixel_on = display.getPixel(X * scaleFactor, Y * scaleFactor);
-
-    if (pixel_on) {
-        collision = true;
-    }
-
-    // XOR the pixel state
-    bool new_pixel_state = !pixel_on;
-
-    // Draw a filled rectangle to represent the scaled pixel
-    for (uint8_t i = 0; i < scaleFactor; i++) {
-        for (uint8_t j = 0; j < scaleFactor; j++) {
-            display.drawPixel(X * scaleFactor + i, Y * scaleFactor + j, new_pixel_state ? WHITE : BLACK);
-        }
-    }
+    // Implement your pixel drawing and collision detection logic here
 }
 
+// Callback function to update the screen display
 void screenUpdateCallback(bool clearScreen, bool updateScreen){
     if(clearScreen){
-        display.clearDisplay();
+        // Implement logic to clear the screen display here
     }
     if(updateScreen){
-
-        /* Added memory stats to flex :) */
-        if(scaleFactor == 1){
-            display.fillRect(0, 54, 128, 10, BLACK);
-            display.fillRect(0, 44, 128, 10, BLACK);
-            display.setTextSize(1);
-            display.setTextColor(WHITE);
-            display.setCursor(0, 54); // Position at the bottom-right
-            display.print("Free Stack: ");
-            display.println(uxTaskGetStackHighWaterMark(NULL));
-            display.setCursor(0, 44); // Position at the bottom-right
-            display.print("Free Heap: ");
-            display.println(xPortGetFreeHeapSize());
-        }
-        display.display();
+        // Implement logic to update the screen display here
     }
 }
+
+// This callback is executed every 1ms to handle key input.
+// Since the loop() is blocked when starting a game, add additional code here to prevent blocking.
+// Example: key = 0x05 & key_state true : this presses the 5 key
+//          key = 0x05 & key_state false : this releases the 5 key
 void keyCallback(uint8_t& key, bool& key_state){
+    // Implement your key press and release logic here
 }
 
 void setup() {
-  // put your setup code here, to run once:
-    if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    }
-
-    delay(500);
-    display.clearDisplay();
-    display.display();
-    delay(500);
+    // Initialize any hardware or peripherals here
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  playGame(space_invaders, sizeof(space_invaders));
+    // Example ROM data to be loaded
+    const uint8_t ROM[] = {0x12, 0x25};
+
+    // Start the game with the specified ROM
+    playGame(ROM, sizeof(ROM));
 }
 
+// Function to start playing a game with the given ROM data
 void playGame(const uint8_t* rom, size_t romSize){
-
-  cc.play_game(rom, romSize, drawPixelCallback, screenUpdateCallback, keyCallback, quirkconfig);
+    ChippyCore cc;
+    cc.play_game(rom, romSize, drawPixelCallback, screenUpdateCallback, keyCallback, quirkconfig);
 }
-
-
-
-
