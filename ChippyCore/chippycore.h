@@ -43,6 +43,7 @@ class ChippyCore{
         void play_game(const uint8_t* data, size_t dataSize, drawPixelCallback callback, screenCallback callback1, keyCallback callback2,const bool* config);
         void stop();
         void pause();
+        bool isRunning();
         
     private:
         //Ram
