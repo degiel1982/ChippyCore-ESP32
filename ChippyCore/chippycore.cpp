@@ -23,12 +23,69 @@ void ChippyCore::play_game(const uint8_t* data, size_t dataSize, drawPixelCallba
     load_rom(data, dataSize);
     flag.set(START, true);
     while(flag.get(START)){
+        uint32_t currentInterruptCycle = millis();
+        if((currentInterruptCycle - last_interrupt_cycle) >= (1000/750)){
+            //loop callback with keypad and sound arguments
+            uint8_t key = -1;
+            bool key_state = false;
+            bool pause = false;
+            bool stop = false;
+
+
+            kcb(key,key_state,pause,stop);
+            if(!flag.get(PAUSE) && pause){
+                flag.set(PAUSE, true);
+            }
+            if(flag.get(PAUSE) && )
+            if(key != -1){
+                keys.set(key, key_state);
+            }
+            last_interrupt_cycle = currentInterruptCycle;
+        }
         if(!flag.get(PAUSE)){
             cycle();
         }  
     }
 }
+/*
+void ChippyCore::load_game(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb,keyCallback kkcb, const bool* config){
+    if(dwpcb){
+        dpcb = dwpcb;
+    }
+    if(sccb){
+        scb = sccb;
+    }
+    if(kkcb){
+        kcb = kkcb;
+    }
+    initialize();
+    flag.set(QUIRK4, config[0]);
+    flag.set(QUIRK5, config[1]);
+    flag.set(QUIRK6, config[2]);
+    flag.set(QUIRK11, config[3]);
+    load_rom(data, dataSize);
+    flag.set(START, true);
+}
 
+void ChippyCore::loop(){
+    if(!flag.get(PAUSE) && flag.get(START)){
+        cycle();
+    }  
+}
+
+void ChippyCore::setCallbacks(drawPixelCallback dwpcb, screenCallback sccb, keyCallback kkcb) {
+    if (dwpcb) {
+        dpcb = dwpcb;
+    }
+    if (sccb) {
+        scb = sccb;
+    }
+    if (kkcb) {
+        kcb = kkcb;
+    }
+}
+
+*/
 //RESET AND INITIALIZE
 void ChippyCore::initialize(){
     PC = ROM_START_ADDRESS; 
@@ -77,17 +134,7 @@ void ChippyCore::load_fontset(){
 
 //CPU & GPU CYCLE METHOD
 void ChippyCore::cycle(){
-    uint32_t currentInterruptCycle = millis();
-    if((currentInterruptCycle - last_interrupt_cycle) >= (1000/750)){
-        //loop callback with keypad and sound arguments
-        uint8_t key = -1;
-        bool key_state = false; 
-        kcb(key,key_state);
-        if(key != -1){
-            keys.set(key, key_state);
-        }
-        last_interrupt_cycle = currentInterruptCycle;
-    }
+
     uint32_t currentCpuCycle = millis();
     if((currentCpuCycle - last_cpu_cycle) >= (1000/500)){
         executeOpcode();

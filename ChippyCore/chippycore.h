@@ -36,14 +36,13 @@ class ChippyCore{
     
         //Define Callbacks
         typedef void (*screenCallback)(bool clearScreen, bool updateScreen);
-        typedef void (*keyCallback)(uint8_t& key_set, bool& key_state);
+        typedef void (*keyCallback)(uint8_t& key_set, bool& key_state, bool& pause, bool& start);
         typedef void (*drawPixelCallback)(const uint16_t X, const uint16_t Y, bool& collisionDetection);
 
         //Method
         void play_game(const uint8_t* data, size_t dataSize, drawPixelCallback callback, screenCallback callback1, keyCallback callback2,const bool* config);
         void stop();
         void pause();
-        bool isRunning();
         
     private:
         //Ram

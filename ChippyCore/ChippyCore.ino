@@ -27,7 +27,7 @@ void screenUpdateCallback(bool clearScreen, bool updateScreen){
 // This callback is executed every 1ms.
 // when the emulator is running the loop is blocked from running.
 
-void loopCallback(uint8_t& key, bool& key_state){
+void loopCallback(uint8_t& key, bool& key_state, bool& pause, bool& stop){
     // Implement your key press and release logic here
 }
 
