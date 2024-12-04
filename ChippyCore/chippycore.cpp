@@ -4,88 +4,63 @@
 #define FONTSET_START_ADDRESS 0x50 
 #define BITMASK_X 0x0F00
 
+
 //CONSTRUCTOR
 void ChippyCore::play_game(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb,keyCallback kkcb, const bool* config){
-    if(dwpcb){
-        dpcb = dwpcb;
-    }
-    if(sccb){
-        scb = sccb;
-    }
-    if(kkcb){
-        kcb = kkcb;
-    }
-    initialize();
-    flag.set(QUIRK4, config[0]);
-    flag.set(QUIRK5, config[1]);
-    flag.set(QUIRK6, config[2]);
-    flag.set(QUIRK11, config[3]);
-    load_rom(data, dataSize);
-    flag.set(START, true);
-    while(flag.get(START)){
-        uint32_t currentInterruptCycle = millis();
-        if((currentInterruptCycle - last_interrupt_cycle) >= (1000/750)){
-            //loop callback with keypad and sound arguments
-            uint8_t key = -1;
-            bool key_state = false;
-            bool pause = false;
-            bool stop = false;
-
-
-            kcb(key,key_state,pause,stop);
-            if(!flag.get(PAUSE) && pause){
-                flag.set(PAUSE, true);
-            }
-            if(flag.get(PAUSE) && )
-            if(key != -1){
-                keys.set(key, key_state);
-            }
-            last_interrupt_cycle = currentInterruptCycle;
+    if(!flag.get(START)){ 
+        if(dwpcb){
+            dpcb = dwpcb;
         }
-        if(!flag.get(PAUSE)){
-            cycle();
-        }  
+        if(sccb){
+            scb = sccb;
+        }
+        if(kkcb){
+            kcb = kkcb;
+        }
+        initialize();
+        flag.set(QUIRK4, config[0]);
+        flag.set(QUIRK5, config[1]);
+        flag.set(QUIRK6, config[2]);
+        flag.set(QUIRK11, config[3]);
+        load_rom(data, dataSize);
+        flag.set(START, true);
     }
-}
-/*
-void ChippyCore::load_game(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb,keyCallback kkcb, const bool* config){
-    if(dwpcb){
-        dpcb = dwpcb;
+    else{
+        if(flag.get(START)){
+            uint32_t currentInterruptCycle = millis();
+            if((currentInterruptCycle - last_interrupt_cycle) >= (1000/750)){
+
+                //loop callback with keypad and sound arguments
+                uint8_t key = -1;
+                bool key_state = false;
+                
+                bool pause = flag.get(PAUSE);
+                bool stop = false;
+                kcb(key,key_state,pause,stop,flag.get(SOUND_STATE));
+
+                //if pause state changed, update the flag and call screen callback with new pause state.
+                if(flag.get(PAUSE) != pause){
+                    flag.set(PAUSE, pause);
+                }
+                //if stop state changed, update the flag and break from loop.
+                if(stop){
+                    flag.set(START, false);
+                }
+                
+                //if key is !-1 and key_state is true then set the keys state to pressed. 
+                if(key != -1){
+                    keys.set(key, key_state);
+                }
+                
+                last_interrupt_cycle = currentInterruptCycle;
+            }
+            if(!flag.get(PAUSE)){
+                cycle();
+            }  
+        }
     }
-    if(sccb){
-        scb = sccb;
-    }
-    if(kkcb){
-        kcb = kkcb;
-    }
-    initialize();
-    flag.set(QUIRK4, config[0]);
-    flag.set(QUIRK5, config[1]);
-    flag.set(QUIRK6, config[2]);
-    flag.set(QUIRK11, config[3]);
-    load_rom(data, dataSize);
-    flag.set(START, true);
 }
 
-void ChippyCore::loop(){
-    if(!flag.get(PAUSE) && flag.get(START)){
-        cycle();
-    }  
-}
-
-void ChippyCore::setCallbacks(drawPixelCallback dwpcb, screenCallback sccb, keyCallback kkcb) {
-    if (dwpcb) {
-        dpcb = dwpcb;
-    }
-    if (sccb) {
-        scb = sccb;
-    }
-    if (kkcb) {
-        kcb = kkcb;
-    }
-}
-
-*/
 //RESET AND INITIALIZE
 void ChippyCore::initialize(){
     PC = ROM_START_ADDRESS; 
@@ -143,9 +118,18 @@ void ChippyCore::cycle(){
     uint32_t currentGpuCycle = millis();
     if((currentGpuCycle - last_gpu_cycle) >= (1000/60)){
         if(DELAYTIMER > 0){
-          DELAYTIMER--;
+            DELAYTIMER--;
         }
-        if(SOUNDTIMER > 0){
+
+        if(SOUNDTIMER >= 0){
+          if(SOUNDTIMER == 0){
+                if(flag.get(SOUND_STATE)){
+                    flag.set(SOUND_STATE,false);
+                }
+          }
+          if(!flag.get(SOUND_STATE)){
+                flag.set(SOUND_STATE,true);
+          }
           SOUNDTIMER--;
         }
         if(flag.get(CLEAR_DISPLAY)){
@@ -158,17 +142,6 @@ void ChippyCore::cycle(){
         last_gpu_cycle = currentGpuCycle;
     }
 
-}
-
-//CONTROL EMULATOR METHOD
-/*STOP EMULATOR*/
-void ChippyCore::stop(){
-    flag.set(START, false);
-}
-void ChippyCore::pause(){
-    if(flag.get(START)){
-        flag.set(PAUSE, !flag.get(PAUSE));
-    }
 }
 
 //KEYPAD METHODS

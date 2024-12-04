@@ -11,24 +11,27 @@
 #define START 1
 #define PAUSE 2
 #define CLEAR_DISPLAY 3
+#define SOUND_STATE 4
 
 ///***********************************************************************************************///
 ///                                       EMULATOR QUIRKS                                         ///
 ///                                                                                               /// 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-#define QUIRK4 4    // COSMAC-based variants reset VF register to 0 before certain operations. 
+#define QUIRK4 5    // COSMAC-based variants reset VF register to 0 before certain operations. 
                     // Enabled: VF is reset to 0 before instructions that modify it. 
                     // Disabled: VF retains its previous value before such instructions. 
 
-#define QUIRK5 5    // CHIP-48/SCHIP-1.x do not set vX to vY when shifting, so only shift vX.
+#define QUIRK5 6    // CHIP-48/SCHIP-1.x do not set vX to vY when shifting, so only shift vX.
 
-#define QUIRK6 6    // Wrapping or clipping behavior for sprites. 
+#define QUIRK6 7   // Wrapping or clipping behavior for sprites. 
                     // Enabled: Sprites wrap around the screen borders. 
                     // Disabled: Sprites are clipped at the screen edges. 
 
-#define QUIRK11 7   // Increment behavior for the I register. 
+#define QUIRK11 8   // Increment behavior for the I register. 
                     // Enabled: For CHIP-48/SCHIP-1.0, I is incremented by the value of X. For SCHIP-1.1, I is not incremented. 
                     // Disabled: I is not incremented in either case.
+
+
 
 //The ChippyCore Class
 class ChippyCore{
@@ -36,18 +39,16 @@ class ChippyCore{
     
         //Define Callbacks
         typedef void (*screenCallback)(bool clearScreen, bool updateScreen);
-        typedef void (*keyCallback)(uint8_t& key_set, bool& key_state, bool& pause, bool& start);
+        typedef void (*keyCallback)(uint8_t& key_set, bool& key_state, bool& pause, bool& stop, bool sound);
         typedef void (*drawPixelCallback)(const uint16_t X, const uint16_t Y, bool& collisionDetection);
 
         //Method
         void play_game(const uint8_t* data, size_t dataSize, drawPixelCallback callback, screenCallback callback1, keyCallback callback2,const bool* config);
-        void stop();
-        void pause();
         
     private:
         //Ram
         uint8_t RAM[RAM_SIZE];
-
+        
         //Registers
         uint16_t PC; 
         uint16_t INDEX;
@@ -80,5 +81,6 @@ class ChippyCore{
         int8_t get_pressed_key();
         void cycle();
         void set_key_state(uint8_t key, bool is_pressed);
+        
 };
 #endif
