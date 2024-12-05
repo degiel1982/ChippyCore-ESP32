@@ -13,6 +13,9 @@
 #define CLEAR_DISPLAY 3
 #define SOUND_STATE 4
 
+
+
+
 ///***********************************************************************************************///
 ///                                       EMULATOR QUIRKS                                         ///
 ///                                                                                               /// 
@@ -39,11 +42,11 @@ class ChippyCore{
     
         //Define Callbacks
         typedef void (*screenCallback)(bool clearScreen, bool updateScreen);
-        typedef void (*keyCallback)(uint8_t& key_set, bool& key_state, bool& pause, bool& stop, bool sound);
+        typedef void (*keyCallback)(uint8_t& key_set, bool& key_state, bool& pause, bool& stop);
         typedef void (*drawPixelCallback)(const uint16_t X, const uint16_t Y, bool& collisionDetection);
 
         //Method
-        void play_game(const uint8_t* data, size_t dataSize, drawPixelCallback callback, screenCallback callback1, keyCallback callback2,const bool* config);
+        bool play_game(const uint8_t* data, size_t dataSize, drawPixelCallback callback, screenCallback callback1, keyCallback callback2,const bool* config);
         
     private:
         //Ram
@@ -81,6 +84,6 @@ class ChippyCore{
         int8_t get_pressed_key();
         void cycle();
         void set_key_state(uint8_t key, bool is_pressed);
-        
+        void handleError(uint8_t errorCode);
 };
 #endif

@@ -4,10 +4,23 @@
 #define FONTSET_START_ADDRESS 0x50 
 #define BITMASK_X 0x0F00
 
+//ERROR CODES
+#define ERROR_ROM_SIZE 1
+
+void ChippyCore::handleError(uint8_t errorCode){
+    switch(errorCode){
+        case ERROR_ROM_SIZE:
+            Serial.println("Error loading rom::Rom Size to big");
+        break;
+        default:
+        break;
+    }
+}
 
 //CONSTRUCTOR
-void ChippyCore::play_game(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb,keyCallback kkcb, const bool* config){
+bool ChippyCore::play_game(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb, keyCallback kkcb, const bool* config){
     if(!flag.get(START)){ 
+        
         if(dwpcb){
             dpcb = dwpcb;
         }
@@ -17,13 +30,23 @@ void ChippyCore::play_game(const uint8_t* data, size_t dataSize, drawPixelCallba
         if(kkcb){
             kcb = kkcb;
         }
+
         initialize();
+
         flag.set(QUIRK4, config[0]);
         flag.set(QUIRK5, config[1]);
         flag.set(QUIRK6, config[2]);
         flag.set(QUIRK11, config[3]);
-        load_rom(data, dataSize);
-        flag.set(START, true);
+
+        uint8_t error = load_rom(data, dataSize);
+        if(error){
+            handleError(error);
+            return false;
+        }
+        else{
+            flag.set(START, true);
+        }
+        
     }
     else{
         if(flag.get(START)){
@@ -36,7 +59,7 @@ void ChippyCore::play_game(const uint8_t* data, size_t dataSize, drawPixelCallba
                 
                 bool pause = flag.get(PAUSE);
                 bool stop = false;
-                kcb(key,key_state,pause,stop,flag.get(SOUND_STATE));
+                kcb(key,key_state,pause,stop);
 
                 //if pause state changed, update the flag and call screen callback with new pause state.
                 if(flag.get(PAUSE) != pause){
@@ -59,6 +82,7 @@ void ChippyCore::play_game(const uint8_t* data, size_t dataSize, drawPixelCallba
             }  
         }
     }
+    return flag.get(START);
 }
 
 //RESET AND INITIALIZE
@@ -80,8 +104,12 @@ void ChippyCore::initialize(){
 
 //LOAD INTO RAM
 //ROM
-void ChippyCore::load_rom(const uint8_t* data, size_t dataSize){
+uint8_t ChippyCore::load_rom(const uint8_t* data, size_t dataSize){
+    if (dataSize > (RAM_SIZE - ROM_START_ADDRESS)) {
+        return ERROR_ROM_SIZE;
+    }
     memcpy(RAM + ROM_START_ADDRESS, data, dataSize);
+    return 0;
 }
 
 //FONTSET

@@ -10,9 +10,10 @@ bool quirkconfig[5] =  {
 
 // Callback function to draw a pixel on the screen with collision detection
 void drawPixelCallback(const uint16_t X, const uint16_t Y, bool& collision){
-    // Implement your pixel drawing and collision detection logic here
+    // X: The X-coordinate of the pixel to be drawn on the screen.
+    // Y: The Y-coordinate of the pixel to be drawn on the screen.
+    // collision: A reference to a boolean flag. Initially set to false, this flag will be activated (set to true) only if a collision is detected during the drawing process.
 }
-
 
 // Callback function to update the screen display
 void screenUpdateCallback(bool clearScreen, bool updateScreen){
@@ -25,7 +26,7 @@ void screenUpdateCallback(bool clearScreen, bool updateScreen){
 }
 
 // This callback is executed every 1ms.
-// when the emulator is running the loop is blocked from running.
+// When the emulator is paaused this still work.
 
 void loopCallback(uint8_t& key, bool& key_state, bool& pause, bool& stop){
     // Implement your key press and release logic here
@@ -40,11 +41,11 @@ void loop() {
     const uint8_t ROM[] = {0x12, 0x25};
 
     // Start the game with the specified ROM
-    playGame(ROM, sizeof(ROM));
+    while(playGame(ROM, sizeof(ROM))){};
 }
 
 // Function to start playing a game with the given ROM data
-void playGame(const uint8_t* rom, size_t romSize){
+bool playGame(const uint8_t* rom, size_t romSize){
     ChippyCore cc;
-    cc.play_game(rom, romSize, drawPixelCallback, screenUpdateCallback, loopCallback, quirkconfig);
+    return cc.play_game(rom, romSize, drawPixelCallback, screenUpdateCallback, loopCallback, quirkconfig) ? true : false;
 }
