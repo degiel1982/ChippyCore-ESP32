@@ -32,7 +32,7 @@ void ChippyCore::handleError(uint8_t errorCode){
             stopEmulator();
         break;
     }
-  }
+  
   delay(2000);
 }
 
@@ -71,16 +71,12 @@ void ChippyCore::loop(bool debug){
             //loop callback with keypad and sound arguments
             uint8_t key = 255;
             bool key_state = false;
-                
             bool pause = flag.get(PAUSE);
             bool stop = false;
             kcb(key,key_state,pause,stop);
-
-            //if pause state changed, update the flag and call screen callback with new pause state.
             if(flag.get(PAUSE) != pause){
                 flag.set(PAUSE, pause);
             }
-            //if stop state changed, update the flag and break from loop.
             if(stop){
                 stopEmulator();
             }
@@ -104,7 +100,6 @@ void ChippyCore::initialize(){
     SP = 0; 
     DELAYTIMER = 0; 
     SOUNDTIMER = 0;
-    //SpriteCount = 0;
     memset(V,0,sizeof(V));
     memset(STACK,0,sizeof(STACK));
     memset(RAM, 0, sizeof(RAM));
@@ -340,7 +335,7 @@ void ChippyCore::executeOpcode() {
                     uint8_t Y = (OPCODE & 0x00F0) >> 4;
                     // 8XY7: Set Vx = Vy - Vx, set VF = NOT borrow
                     V[0xF] = (V[Y] > V[X]) ? 1 : 0;
-                    V[(X] = V[Y] - V[X];
+                    V[X] = V[Y] - V[X];
                     PC += 2;
                 break;
                 case 0xE:
@@ -380,9 +375,9 @@ void ChippyCore::executeOpcode() {
             PC = ((OPCODE & 0x0FFF) + V[0]);
         break;
         case 0xC000:
-                // CXNN: Set Vx = random byte AND NN
-                V[(OPCODE & BITMASK_X) >> MAX_8] = ((esp_random() & 0xFF) & (OPCODE & 0x00FF));
-                PC += 2;
+            // CXNN: Set Vx = random byte AND NN
+            V[(OPCODE & BITMASK_X) >> MAX_8] = ((esp_random() & 0xFF) & (OPCODE & 0x00FF));
+            PC += 2;
         break;
         case 0xD000: {
             V[0xF] = 0; 
