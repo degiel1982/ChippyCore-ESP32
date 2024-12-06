@@ -6,22 +6,38 @@
 
 //ERROR CODES
 #define ERROR_ROM_SIZE 1
+#define STACK_UNDERFLOW_ERROR 2
 #define ERROR_USER_KEYPRESS 3
+#define STACK_OVERFLOW_ERROR 4
 
-void ChippyCore::handleError(uint8_t errorCode, bool debug){
-  if(debug){
+void ChippyCore::handleError(uint8_t errorCode){
     switch(errorCode){
         case ERROR_ROM_SIZE:
             Serial.println("ERROR: The rom size is too big");
+            stopEmulator();
         break;
         case ERROR_USER_KEYPRESS:
             Serial.println("ERROR: You can only choose a keypress value 0-15 in your loopback");
+            stopEmulator();
+        break;
+        case STACK_UNDERFLOW_ERROR:
+            Serial.println("ERROR: Stack underflow opcode 0x00EE");
+            stopEmulator();
+        break;
+        case STACK_OVERFLOW_ERROR:
+            Serial.println("ERROR: Stack overflow opcode 0x2000");
+            stopEmulator();
         break;
         default:
+            stopEmulator();
         break;
     }
   }
   delay(2000);
+}
+
+void ChippyCore::stopEmulator(){
+    flag.set(START, false);
 }
 bool ChippyCore::isRunning(){
     return flag.get(START);
@@ -44,13 +60,12 @@ void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCal
     uint8_t error = load_rom(data, dataSize);
     if(error){
         handleError(error,debug);
-        flag.set(START, false);
         return;
     }
     flag.set(START,true);      
 }
 void ChippyCore::loop(bool debug){
-    if(flag.get(START)){
+    if(isRunning()){
         uint32_t currentInterruptCycle = millis();
         if((currentInterruptCycle - last_interrupt_cycle) >= (1000/750)){
             //loop callback with keypad and sound arguments
@@ -67,18 +82,15 @@ void ChippyCore::loop(bool debug){
             }
             //if stop state changed, update the flag and break from loop.
             if(stop){
-                flag.set(START, false);
+                stopEmulator();
             }
             if (key != 255) {
               if ((key < 0 || key > 15) && key != 255) {
                   handleError(ERROR_USER_KEYPRESS, debug);
-                  flag.set(START, false);
                   return;
               }
               keys.set(key, key_state);
           }
-
-                
             last_interrupt_cycle = currentInterruptCycle;
         }
         if(!flag.get(PAUSE)){
@@ -191,7 +203,12 @@ void ChippyCore::executeOpcode() {
                 break;
                 case 0xEE:
                     // 00EE: Return from subroutine
-                    PC = STACK[--SP];
+                    if (SP <= 0){
+                      handleError(STACK_UNDERFLOW_ERROR);
+                    }
+                    else{
+                        PC = STACK[--SP];
+                    }
                 break;
                 default:
                 break;
@@ -208,7 +225,7 @@ void ChippyCore::executeOpcode() {
                 PC = OPCODE & 0x0FFF;         // Jump to the address specified by the opcode
             } 
             else {
-                PC += 2; // If stack is full, increment PC to skip this instruction
+                handleError(STACK_OVERFLOW_ERROR);
             }
         break;
         case 0x3000:
@@ -254,64 +271,76 @@ void ChippyCore::executeOpcode() {
             switch (OPCODE & 0x000F) {
                 case 0x0:
                     // 8XY0: Set Vx = Vy
-                    V[(OPCODE & 0x0F00) >> 8] = V[Y];
+                    V[(OPCODE & 0x0F00) >> 8] = V[(OPCODE & 0x00F0) >> 4];
                     PC += 2;
                 break;
-                case 0x1:
+                case 0x1:{
+                    uint8_t X = (OPCODE & 0x0F00) >> 8;
                     // 8XY1: Set Vx = Vx OR Vy
-                    V[(OPCODE & 0x0F00) >> 8] |= V[Y];
+                    V[X] |= V[(OPCODE & 0x00F0) >> 4];
                     if(flag.get(QUIRK4)){
                         V[0xF] = 0;
                     }
                     PC += 2;
+                }
                 break;
-                case 0x2:
+                case 0x2:{
+                    uint8_t X = (OPCODE & 0x0F00) >> 8;
                     // 8XY2: Set Vx = Vx AND Vy
-                    V[(OPCODE & 0x0F00) >> 8] &= V[Y];
+                    V[X] &= V[(OPCODE & 0x00F0) >> 4];
                     if(flag.get(QUIRK4)){
                         V[0xF] = 0;
                     }
                     PC += 2;
+                }
                 break;
-                case 0x3:
-                
+                case 0x3:{
+                    uint8_t X = (OPCODE & 0x0F00) >> 8;
                     // 8XY3: Set Vx = Vx XOR Vy
-                    V[(OPCODE & 0x0F00) >> 8] ^= V[Y];
+                    V[X] ^= V[(OPCODE & 0x00F0) >> 4];
                     if(flag.get(QUIRK4)){
                         V[0xF] = 0;
                     }                    
                     PC += 2;
+                }
                 break;
                 case 0x4: {
                     // 8XY4: Set Vx = Vx + Vy, set VF = carry
-                    uint16_t sum = V[(OPCODE & 0x0F00) >> 8] + V[Y];
-                    V[0xF] = (sum > 0xFF) ? 1 : 0;
-                    V[(OPCODE & 0x0F00) >> 8] = sum & 0xFF;
+                    uint8_t X = (OPCODE & 0x0F00) >> 8;
+                    V[0xF] = ((V[X] + V[(OPCODE & 0x00F0) >> 4]) > 0xFF) ? 1 : 0;
+                    V[X] = sum & 0xFF;
                     PC += 2;
                 } 
                 break;
-                case 0x5:
+                case 0x5:{
                     // 8XY5: Set Vx = Vx - Vy, set VF = NOT borrow
-                    V[0xF] = (V[(OPCODE & 0x0F00) >> 8] > V[Y]) ? 1 : 0;
-                    V[(OPCODE & 0x0F00) >> 8] -= V[Y];
+                    uint8_t X = (OPCODE & 0x0F00) >> 8;
+                    uint8_t Y = (OPCODE & 0x00F0) >> 4;
+                    V[0xF] = (V[X] > V[Y]) ? 1 : 0;
+                    V[X] -= V[Y];
                     PC += 2;
+                }
                 break;
                 case 0x6:
                     // 8XY6: Set Vx = Vx SHR 1, set VF = least significant bit before shift
                     if(flag.get(QUIRK5)){
-                        V[0xF] = (V[(OPCODE & 0x0F00) >> 8] & 0x1);
-                        V[(OPCODE & 0x0F00) >> 8] >>= 1;
+                        uint8_t X = (OPCODE & 0x0F00) >> 8;
+                        V[0xF] = (V[X] & 0x1);
+                        V[X] >>= 1;
                     }
                     else{
-                          V[0xF] = V[Y] & 0x1;
-                          V[(OPCODE & 0x0F00) >> 8] = V[Y] >> 1;
+                        uint8_t Y = (OPCODE & 0x00F0) >> 4;
+                        V[0xF] = V[Y] & 0x1;
+                        V[(OPCODE & 0x0F00) >> 8] = V[Y] >> 1;
                     }
                     PC += 2;
                 break;
                 case 0x7:
+                    uint8_t X = (OPCODE & 0x0F00) >> 8;
+                    uint8_t Y = (OPCODE & 0x00F0) >> 4;
                     // 8XY7: Set Vx = Vy - Vx, set VF = NOT borrow
-                    V[0xF] = (V[Y] > V[(OPCODE & 0x0F00) >> 8]) ? 1 : 0;
-                    V[(OPCODE & 0x0F00) >> 8] = V[Y] - V[(OPCODE & 0x0F00) >> 8];
+                    V[0xF] = (V[Y] > V[X]) ? 1 : 0;
+                    V[(X] = V[Y] - V[X];
                     PC += 2;
                 break;
                 case 0xE:
@@ -357,12 +386,10 @@ void ChippyCore::executeOpcode() {
         break;
         case 0xD000: {
             V[0xF] = 0; 
-            //SpriteLocationData[SpriteCount] = packSpriteLocationData((V[(OPCODE >> MAX_8) & 0x0F] % 64), (OPCODE & 0x000F), (V[(OPCODE >> 4) & 0x0F] % 32));
-            for(uint8_t row = 0;row < (OPCODE & 0x000F); row++){
+            uint8_t N = (OPCODE & 0x000F);
+            for(uint8_t row = 0; row < N; row++){
                 for (uint8_t col = 0; col < 8; col++) {
                     if (((RAM[INDEX + row]) & (0x80 >> col)) != 0) {
-                        
-                          
                         uint8_t x = V[(OPCODE & 0x0F00) >> 8] + col;
                         uint8_t y = V[(OPCODE & 0x00F0) >> 4] + row;
                         if (flag.get(QUIRK6)) {

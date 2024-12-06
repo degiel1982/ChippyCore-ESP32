@@ -8,6 +8,7 @@
 #define MAX_16 16
 #define MAX_8 8
 
+#define DEBUG 0
 #define START 1
 #define PAUSE 2
 #define CLEAR_DISPLAY 3
@@ -81,6 +82,6 @@ class ChippyCore{
         void cycle();
         void set_key_state(uint8_t key, bool is_pressed);
         void handleError(uint8_t errorCode, bool debug = false);
-        
+        void stop();
 };
 #endif
