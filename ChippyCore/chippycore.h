@@ -13,9 +13,6 @@
 #define CLEAR_DISPLAY 3
 #define SOUND_STATE 4
 
-
-
-
 ///***********************************************************************************************///
 ///                                       EMULATOR QUIRKS                                         ///
 ///                                                                                               /// 
@@ -33,8 +30,6 @@
 #define QUIRK11 8   // Increment behavior for the I register. 
                     // Enabled: For CHIP-48/SCHIP-1.0, I is incremented by the value of X. For SCHIP-1.1, I is not incremented. 
                     // Disabled: I is not incremented in either case.
-
-
 
 //The ChippyCore Class
 class ChippyCore{

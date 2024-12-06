@@ -59,31 +59,35 @@ void playGame(const uint8_t* rom, const size_t romSize, const bool* quirkconfig_
     #ifdef USE_STACK
         Serial.println("You chose to run the emulator from stack. Creating the object now");
         ChippyCore cc;
-
         Serial.println("Game is loading into the emulator.");
         cc.load_and_run(rom, romSize, drawPixelCallback, screenUpdateCallback, loopCallback, quirkconfig_game, debug);
         if(debug){
             Serial.print("Is the emulator running now? state=");
             Serial.println(cc.isRunning());
             showFreeMemory();
-        };
+        }
         while(cc.isRunning()){
             cc.loop(debug);
         }
-        Serial.println("Emulator/Game ended");
+        if(debug){
+            Serial.println("Emulator/Game ended");
+        }
 
     #else
         if(!cc.isRunning()){
-            Serial.println("You chose to run the emulator globally. Object already created");
-            Serial.println("Game is loading into the emulator and starting.");
+           if(debug){
+                Serial.println("You chose to run the emulator globally. Object already created");
+                Serial.println("Game is loading into the emulator and starting.");
+            }
             cc.load_and_run(rom, romSize, drawPixelCallback, screenUpdateCallback, loopCallback, quirkconfig_game, debug);
-            Serial.print("Is the emulator running now? state=");
-            Serial.println(cc.isRunning());
-            showFreeMemory();
+            if(debug){
+                Serial.print("Is the emulator running now? state=");
+                Serial.println(cc.isRunning());
+                showFreeMemory();
+            }
         }
         else{
             cc.loop(debug);
-
         }
     #endif
 }

@@ -23,11 +23,9 @@ void ChippyCore::handleError(uint8_t errorCode, bool debug){
   }
   delay(2000);
 }
-
 bool ChippyCore::isRunning(){
     return flag.get(START);
 }
-
 void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb, keyCallback kkcb, const bool* config, bool debug){
     if(dwpcb){
         dpcb = dwpcb;
@@ -132,7 +130,6 @@ void ChippyCore::load_fontset(){
     memcpy(RAM + FONTSET_START_ADDRESS, FONTSET, sizeof(FONTSET));
 }
 void ChippyCore::cycle(){
-
     uint32_t currentCpuCycle = millis();
     if((currentCpuCycle - last_cpu_cycle) >= (1000/500)){
         executeOpcode();
