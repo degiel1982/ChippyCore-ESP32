@@ -27,8 +27,8 @@
 #define QUIRK5 6    // CHIP-48/SCHIP-1.x do not set vX to vY when shifting, so only shift vX.
 
 #define QUIRK6 7   // Wrapping or clipping behavior for sprites. 
-                    // Enabled: Sprites wrap around the screen borders. 
-                    // Disabled: Sprites are clipped at the screen edges. 
+                  // Enabled: Sprites wrap around the screen borders. 
+                  // Disabled: Sprites are clipped at the screen edges. 
 
 #define QUIRK11 8   // Increment behavior for the I register. 
                     // Enabled: For CHIP-48/SCHIP-1.0, I is incremented by the value of X. For SCHIP-1.1, I is not incremented. 
@@ -46,8 +46,9 @@ class ChippyCore{
         typedef void (*drawPixelCallback)(const uint16_t X, const uint16_t Y, bool& collisionDetection);
 
         //Method
-        bool play_game(const uint8_t* data, size_t dataSize, drawPixelCallback callback, screenCallback callback1, keyCallback callback2,const bool* config);
-        
+        void load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback callback, screenCallback callback1, keyCallback callback2,const bool* config, bool debug = false);
+        bool isRunning();
+        void loop(bool debug = false);
     private:
         //Ram
         uint8_t RAM[RAM_SIZE];
@@ -84,6 +85,7 @@ class ChippyCore{
         int8_t get_pressed_key();
         void cycle();
         void set_key_state(uint8_t key, bool is_pressed);
-        void handleError(uint8_t errorCode);
+        void handleError(uint8_t errorCode, bool debug = false);
+        
 };
 #endif

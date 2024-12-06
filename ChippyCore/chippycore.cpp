@@ -6,86 +6,88 @@
 
 //ERROR CODES
 #define ERROR_ROM_SIZE 1
+#define ERROR_USER_KEYPRESS 3
 
-void ChippyCore::handleError(uint8_t errorCode){
+void ChippyCore::handleError(uint8_t errorCode, bool debug){
+  if(debug){
     switch(errorCode){
         case ERROR_ROM_SIZE:
-            Serial.println("Error loading rom::Rom Size to big");
+            Serial.println("ERROR: The rom size is too big");
+        break;
+        case ERROR_USER_KEYPRESS:
+            Serial.println("ERROR: You can only choose a keypress value 0-15 in your loopback");
         break;
         default:
         break;
     }
+  }
+  delay(2000);
 }
 
-//CONSTRUCTOR
-bool ChippyCore::play_game(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb, keyCallback kkcb, const bool* config){
-    if(!flag.get(START)){ 
-        
-        if(dwpcb){
-            dpcb = dwpcb;
-        }
-        if(sccb){
-            scb = sccb;
-        }
-        if(kkcb){
-            kcb = kkcb;
-        }
-
-        initialize();
-
-        flag.set(QUIRK4, config[0]);
-        flag.set(QUIRK5, config[1]);
-        flag.set(QUIRK6, config[2]);
-        flag.set(QUIRK11, config[3]);
-
-        uint8_t error = load_rom(data, dataSize);
-        if(error){
-            handleError(error);
-            return false;
-        }
-        else{
-            flag.set(START, true);
-        }
-        
-    }
-    else{
-        if(flag.get(START)){
-            uint32_t currentInterruptCycle = millis();
-            if((currentInterruptCycle - last_interrupt_cycle) >= (1000/750)){
-
-                //loop callback with keypad and sound arguments
-                uint8_t key = -1;
-                bool key_state = false;
-                
-                bool pause = flag.get(PAUSE);
-                bool stop = false;
-                kcb(key,key_state,pause,stop);
-
-                //if pause state changed, update the flag and call screen callback with new pause state.
-                if(flag.get(PAUSE) != pause){
-                    flag.set(PAUSE, pause);
-                }
-                //if stop state changed, update the flag and break from loop.
-                if(stop){
-                    flag.set(START, false);
-                }
-                
-                //if key is !-1 and key_state is true then set the keys state to pressed. 
-                if(key != -1){
-                    keys.set(key, key_state);
-                }
-                
-                last_interrupt_cycle = currentInterruptCycle;
-            }
-            if(!flag.get(PAUSE)){
-                cycle();
-            }  
-        }
-    }
+bool ChippyCore::isRunning(){
     return flag.get(START);
 }
 
-//RESET AND INITIALIZE
+void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb, keyCallback kkcb, const bool* config, bool debug){
+    if(dwpcb){
+        dpcb = dwpcb;
+    }
+    if(sccb){
+        scb = sccb;
+    }
+    if(kkcb){
+        kcb = kkcb;
+    }
+    initialize();
+    flag.set(QUIRK4, config[0]);
+    flag.set(QUIRK5, config[1]);
+    flag.set(QUIRK6, config[2]);
+    flag.set(QUIRK11, config[3]);
+    uint8_t error = load_rom(data, dataSize);
+    if(error){
+        handleError(error,debug);
+        flag.set(START, false);
+        return;
+    }
+    flag.set(START,true);      
+}
+void ChippyCore::loop(bool debug){
+    if(flag.get(START)){
+        uint32_t currentInterruptCycle = millis();
+        if((currentInterruptCycle - last_interrupt_cycle) >= (1000/750)){
+            //loop callback with keypad and sound arguments
+            uint8_t key = 255;
+            bool key_state = false;
+                
+            bool pause = flag.get(PAUSE);
+            bool stop = false;
+            kcb(key,key_state,pause,stop);
+
+            //if pause state changed, update the flag and call screen callback with new pause state.
+            if(flag.get(PAUSE) != pause){
+                flag.set(PAUSE, pause);
+            }
+            //if stop state changed, update the flag and break from loop.
+            if(stop){
+                flag.set(START, false);
+            }
+            if (key != 255) {
+              if ((key < 0 || key > 15) && key != 255) {
+                  handleError(ERROR_USER_KEYPRESS, debug);
+                  flag.set(START, false);
+                  return;
+              }
+              keys.set(key, key_state);
+          }
+
+                
+            last_interrupt_cycle = currentInterruptCycle;
+        }
+        if(!flag.get(PAUSE)){
+            cycle();
+        }  
+    }
+}
 void ChippyCore::initialize(){
     PC = ROM_START_ADDRESS; 
     INDEX = 0;
@@ -101,9 +103,6 @@ void ChippyCore::initialize(){
     last_interrupt_cycle = 0;
     load_fontset();
 }
-
-//LOAD INTO RAM
-//ROM
 uint8_t ChippyCore::load_rom(const uint8_t* data, size_t dataSize){
     if (dataSize > (RAM_SIZE - ROM_START_ADDRESS)) {
         return ERROR_ROM_SIZE;
@@ -111,8 +110,6 @@ uint8_t ChippyCore::load_rom(const uint8_t* data, size_t dataSize){
     memcpy(RAM + ROM_START_ADDRESS, data, dataSize);
     return 0;
 }
-
-//FONTSET
 void ChippyCore::load_fontset(){
     const uint8_t FONTSET[80] = {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -134,8 +131,6 @@ void ChippyCore::load_fontset(){
     };
     memcpy(RAM + FONTSET_START_ADDRESS, FONTSET, sizeof(FONTSET));
 }
-
-//CPU & GPU CYCLE METHOD
 void ChippyCore::cycle(){
 
     uint32_t currentCpuCycle = millis();
@@ -171,14 +166,9 @@ void ChippyCore::cycle(){
     }
 
 }
-
-//KEYPAD METHODS
-//CHECK IF SPECIFIC KEY IS PRESSED
 bool ChippyCore::is_key_pressed(uint8_t key) {
     return key < 16 && keys.get(key) == 1; // Return true if key is within range and pressed
 }
-
-//GET VALUE OF PRESSED KEY
 int8_t ChippyCore::get_pressed_key() {
     for (uint8_t key = 0; key < 16; key++) {
         if (keys.get(key) == 1) {
@@ -187,15 +177,11 @@ int8_t ChippyCore::get_pressed_key() {
     }
     return -1; // Return -1 if no key is pressed
 }
-
-//SET THE STATE OF THE KEYS A.K.A MIMICKING A KEYPRESS/RELEASE
 void ChippyCore::set_key_state(uint8_t key, bool is_pressed){
     if (key < 16) { 
         keys.set(key, is_pressed);
     }
 }
-
-//OPCODE HANDLING
 void ChippyCore::executeOpcode() {
     uint16_t OPCODE = (RAM[PC] << 8) | RAM[PC + 1];
     switch (OPCODE & 0xF000) {
