@@ -45,6 +45,16 @@ bool default_quirkconfig[5] =  {
                                   // Disabled: I is not incremented in either case.
 };
 
+void showFreeMemory(){
+    UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(NULL); // Get the high-water mark for this task 
+    Serial.print("Free stack space: "); 
+    Serial.println(highWaterMark);
+    Serial.print("Initial free heap: "); 
+    Serial.println(xPortGetFreeHeapSize()); 
+    Serial.print("Minimum ever free heap: "); 
+    Serial.println(xPortGetMinimumEverFreeHeapSize());
+}
+
 void playGame(const uint8_t* rom, const size_t romSize, const bool* quirkconfig_game){
     #ifdef USE_STACK
         Serial.println("You chose to run the emulator from stack. Creating the object now");
@@ -52,8 +62,11 @@ void playGame(const uint8_t* rom, const size_t romSize, const bool* quirkconfig_
 
         Serial.println("Game is loading into the emulator.");
         cc.load_and_run(rom, romSize, drawPixelCallback, screenUpdateCallback, loopCallback, quirkconfig_game, debug);
-        Serial.print("Is the emulator running now? state=");
-        Serial.println(cc.isRunning());
+        if(debug){
+            Serial.print("Is the emulator running now? state=");
+            Serial.println(cc.isRunning());
+            showFreeMemory();
+        };
         while(cc.isRunning()){
             cc.loop(debug);
         }
@@ -66,9 +79,11 @@ void playGame(const uint8_t* rom, const size_t romSize, const bool* quirkconfig_
             cc.load_and_run(rom, romSize, drawPixelCallback, screenUpdateCallback, loopCallback, quirkconfig_game, debug);
             Serial.print("Is the emulator running now? state=");
             Serial.println(cc.isRunning());
+            showFreeMemory();
         }
         else{
             cc.loop(debug);
+
         }
     #endif
 }
