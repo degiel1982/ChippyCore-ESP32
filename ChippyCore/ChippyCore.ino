@@ -29,7 +29,7 @@ void loopCallback(uint8_t& key, bool& key_state, bool& pause, bool& stop){
 
 //There are some roms that needs those quirks.
 //I do not know yet which ones. Every rom you load can have his own set of quirks.
-bool quirkconfig[5] =  {   
+bool default_quirkconfig[5] =  {   
                           false,  // COSMAC-based variants reset VF register to 0 before certain operations. 
                                   // Enabled: VF is reset to 0 before instructions that modify it. 
                                   // Disabled: VF retains its previous value before such instructions. 
@@ -84,7 +84,7 @@ void loop() {
     // Example ROM data to be loaded
     const uint8_t ROM[] = {0x12, 0x25};
     // Start the game with the specified ROM
-    playGame(ROM, sizeof(ROM), quirkconfig);
+    playGame(ROM, sizeof(ROM), default_quirkconfig);
 }
 
 
