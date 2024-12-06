@@ -81,7 +81,7 @@ class ChippyCore{
         int8_t get_pressed_key();
         void cycle();
         void set_key_state(uint8_t key, bool is_pressed);
-        void handleError(uint8_t errorCode, bool debug = false);
-        void stop();
+        void handleError(uint8_t errorCode);
+        void stopEmulator();
 };
 #endif
