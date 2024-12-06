@@ -77,7 +77,7 @@ class ChippyCore{
 
         //Methods
         void initialize();
-        void load_rom(const uint8_t* data, size_t dataSize);
+        uint8_t load_rom(const uint8_t* data, size_t dataSize);
         void load_fontset();
         void executeOpcode();
         bool is_key_pressed(uint8_t key);
