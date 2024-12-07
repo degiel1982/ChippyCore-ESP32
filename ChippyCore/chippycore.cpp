@@ -105,6 +105,8 @@ uint8_t ChippyCore::load_rom(const uint8_t* data, size_t dataSize){
     memcpy(RAM + ROM_START_ADDRESS, data, dataSize);
     return 0;
 }
+
+// load fontset into memory
 void ChippyCore::load_fontset(){
     const uint8_t FONTSET[80] = {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -194,7 +196,7 @@ void ChippyCore::executeOpcode() {
                 case 0xEE:
                     // 00EE: Return from subroutine
                     if (SP <= 0){
-                      handleError(STACK_UNDERFLOW_ERROR);
+                      handleError(STACK_UNDERFLOW_ERROR); // STACK UNDERFLOW ERROR 
                     }
                     else{
                         PC = STACK[--SP];
@@ -213,9 +215,9 @@ void ChippyCore::executeOpcode() {
             if (SP < MAX_16) {
                 STACK[SP++] = PC + 2; // Push the current PC onto the stack
                 PC = OPCODE & 0x0FFF;         // Jump to the address specified by the opcode
-            } 
+            }
             else {
-                handleError(STACK_OVERFLOW_ERROR);
+                handleError(STACK_OVERFLOW_ERROR); // Stack overflow error. This should never happen in a real game loop, but it's here for the sake of completeness...
             }
         break;
         case 0x3000:
