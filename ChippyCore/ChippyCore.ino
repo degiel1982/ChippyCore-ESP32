@@ -55,14 +55,14 @@ void showFreeMemory(){
 void playGame(const uint8_t* rom, const size_t romSize, const bool* quirkconfig_game){
     #ifdef USE_STACK
         ChippyCore cc;
-        cc.load_and_run(rom, romSize, drawPixelCallback, screenUpdateCallback, loopCallback, quirkconfig_game);
+        cc.load_and_run(rom, romSize, &drawPixelCallback, &screenUpdateCallback, &loopCallback, quirkconfig_game);
         while(cc.isRunning()){
             cc.loop();
         }
 
     #else
         if(!cc.isRunning()){
-            cc.load_and_run(rom, romSize, drawPixelCallback, screenUpdateCallback, loopCallback, quirkconfig_game);
+            cc.load_and_run(rom, romSize, &drawPixelCallback, &screenUpdateCallback, &loopCallback, quirkconfig_game);
         }
         else{
             cc.loop();

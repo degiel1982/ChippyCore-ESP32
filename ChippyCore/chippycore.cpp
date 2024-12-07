@@ -18,6 +18,10 @@ void ChippyCore::handleError(uint8_t errorCode){
             Serial.println("ERROR: Stack overflow opcode 0x2000");
             stopEmulator();
         break;
+        case UNKNOWN_OPCODE:
+            Serial.println("ERROR: Unknown Opcode detected");
+            stopEmulator();
+        break;
         default:
             stopEmulator();
         break;
@@ -56,34 +60,39 @@ void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCal
 }
 void ChippyCore::loop(){
     if(isRunning()){
-        uint32_t currentInterruptCycle = millis();
-        if((currentInterruptCycle - last_interrupt_cycle) >= (1000/750)){
-            //loop callback with keypad and sound arguments
-            uint8_t key = 255;
-            bool key_state = false;
-            bool pause = flag.get(PAUSE);
-            bool stop = false;
-            kcb(key,key_state,pause,stop);
-            if(flag.get(PAUSE) != pause){
-                flag.set(PAUSE, pause);
-            }
-            if(stop){
-                stopEmulator();
-            }
-            if (key != 255) {
-              if ((key < 0 || key >= MAX_16) && key != 255) {
-                  handleError(ERROR_USER_KEYPRESS);
-                  return;
-              }
-              keys.set(key, key_state);
-          }
-            last_interrupt_cycle = currentInterruptCycle;
-        }
+        loopCycle(); // When running paused or not paused it will always run
         if(!flag.get(PAUSE)){
-            cycle();
+            cycle(); //Only cycle when not paused
         }  
     }
 }
+
+void ChippyCore::loopCycle(){
+    uint32_t currentInterruptCycle = millis();
+    if((currentInterruptCycle - last_interrupt_cycle) >= (1000/750)){
+        //loop callback with keypad and sound arguments
+        uint8_t key = 255;
+        bool key_state = false;
+        bool pause = flag.get(PAUSE);
+        bool stop = false;
+        kcb(key,key_state,pause,stop);
+        if(flag.get(PAUSE) != pause){
+            flag.set(PAUSE, pause);
+        }
+        if(stop){
+            stopEmulator();
+        }
+        if (key != 255) {
+            if ((key < 0 || key >= MAX_16) && key != 255) {
+                handleError(ERROR_USER_KEYPRESS);
+                return;
+            }
+            keys.set(key, key_state);
+        }
+        last_interrupt_cycle = currentInterruptCycle;
+    }
+}
+
 void ChippyCore::initialize(){
     PC = ROM_START_ADDRESS; 
     INDEX = 0;
@@ -203,6 +212,7 @@ void ChippyCore::executeOpcode() {
                     }
                 break;
                 default:
+                    handleError(UNKNOWN_OPCODE);
                 break;
             }
         break;
@@ -355,7 +365,7 @@ void ChippyCore::executeOpcode() {
                     
                 break;
                 default:
-                
+                    handleError(UNKNOWN_OPCODE);
                 break;
             }
         } 
@@ -436,7 +446,7 @@ void ChippyCore::executeOpcode() {
                     }
                 break;
                 default:
-                    PC += 2;
+                    handleError(UNKNOWN_OPCODE);
                 break;
             }
         } 
@@ -514,11 +524,13 @@ void ChippyCore::executeOpcode() {
                 }
                 break;
                 default:
+                    handleError(UNKNOWN_OPCODE);
                 break;
             }
         } 
         break;
         default:
+            handleError(UNKNOWN_OPCODE);
         break;
     }
 }

@@ -19,4 +19,6 @@
     #define STACK_UNDERFLOW_ERROR 2
     #define ERROR_USER_KEYPRESS 3
     #define STACK_OVERFLOW_ERROR 4
+    #define UNKNOWN_OPCODE 5
+    
 #endif
