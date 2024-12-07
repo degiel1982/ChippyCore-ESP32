@@ -1,13 +1,10 @@
 #include "chippycore.h"
 
-//#define USE_STACK
+#define USE_STACK
 
 #ifndef USE_STACK
     ChippyCore cc;
 #endif
-
-bool debug = true;
-
 
 // Callback function to draw a pixel on the screen with collision detection
 void drawPixelCallback(const uint16_t X, const uint16_t Y, bool& collision){
@@ -57,37 +54,18 @@ void showFreeMemory(){
 
 void playGame(const uint8_t* rom, const size_t romSize, const bool* quirkconfig_game){
     #ifdef USE_STACK
-        Serial.println("You chose to run the emulator from stack. Creating the object now");
         ChippyCore cc;
-        Serial.println("Game is loading into the emulator.");
-        cc.load_and_run(rom, romSize, drawPixelCallback, screenUpdateCallback, loopCallback, quirkconfig_game, debug);
-        if(debug){
-            Serial.print("Is the emulator running now? state=");
-            Serial.println(cc.isRunning());
-            showFreeMemory();
-        }
+        cc.load_and_run(rom, romSize, drawPixelCallback, screenUpdateCallback, loopCallback, quirkconfig_game);
         while(cc.isRunning()){
-            cc.loop(debug);
-        }
-        if(debug){
-            Serial.println("Emulator/Game ended");
+            cc.loop();
         }
 
     #else
         if(!cc.isRunning()){
-           if(debug){
-                Serial.println("You chose to run the emulator globally. Object already created");
-                Serial.println("Game is loading into the emulator and starting.");
-            }
-            cc.load_and_run(rom, romSize, drawPixelCallback, screenUpdateCallback, loopCallback, quirkconfig_game, debug);
-            if(debug){
-                Serial.print("Is the emulator running now? state=");
-                Serial.println(cc.isRunning());
-                showFreeMemory();
-            }
+            cc.load_and_run(rom, romSize, drawPixelCallback, screenUpdateCallback, loopCallback, quirkconfig_game);
         }
         else{
-            cc.loop(debug);
+            cc.loop();
         }
     #endif
 }

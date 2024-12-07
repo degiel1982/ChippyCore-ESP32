@@ -1,14 +1,5 @@
 #include "chippycore.h"
 
-#define ROM_START_ADDRESS 0x200
-#define FONTSET_START_ADDRESS 0x50 
-
-//ERROR CODES
-#define ERROR_ROM_SIZE 1
-#define STACK_UNDERFLOW_ERROR 2
-#define ERROR_USER_KEYPRESS 3
-#define STACK_OVERFLOW_ERROR 4
-
 void ChippyCore::handleError(uint8_t errorCode){
     switch(errorCode){
         case ERROR_ROM_SIZE:
@@ -41,7 +32,7 @@ void ChippyCore::stopEmulator(){
 bool ChippyCore::isRunning(){
     return flag.get(START);
 }
-void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb, keyCallback kkcb, const bool* config, bool debug){
+void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb, keyCallback kkcb, const bool* config){
     if(dwpcb){
         dpcb = dwpcb;
     }
@@ -63,7 +54,7 @@ void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCal
     }
     flag.set(START,true);      
 }
-void ChippyCore::loop(bool debug){
+void ChippyCore::loop(){
     if(isRunning()){
         uint32_t currentInterruptCycle = millis();
         if((currentInterruptCycle - last_interrupt_cycle) >= (1000/750)){
@@ -80,7 +71,7 @@ void ChippyCore::loop(bool debug){
                 stopEmulator();
             }
             if (key != 255) {
-              if ((key < 0 || key > 15) && key != 255) {
+              if ((key < 0 || key >= MAX_16) && key != 255) {
                   handleError(ERROR_USER_KEYPRESS);
                   return;
               }
@@ -170,11 +161,11 @@ void ChippyCore::cycle(){
 
 }
 bool ChippyCore::is_key_pressed(uint8_t key) {
-    return key < 16 && keys.get(key) == 1; // Return true if key is within range and pressed
+    return key < MAX_16 && keys.get(key) == 1; // Return true if key is within range and pressed
 }
 //get the pressed keyboard button in the array of buttons (0-F). If no such a button exists return -1;
 int8_t ChippyCore::get_pressed_key() {
-    for (uint8_t key = 0; key < 16; key++) {
+    for (uint8_t key = 0; key < MAX_16; key++) {
         if (keys.get(key) == 1) {
             return key; // Return the key value if pressed
         }
@@ -184,7 +175,7 @@ int8_t ChippyCore::get_pressed_key() {
 
 // Set key state in keys array. This is used to track which buttons are currently pressed or not, and thus update game logic accordingly (e.g., player movement).
 void ChippyCore::set_key_state(uint8_t key, bool is_pressed){
-    if (key < 16) { 
+    if (key < MAX_16) { 
         keys.set(key, is_pressed);
     }
 }
@@ -192,7 +183,6 @@ void ChippyCore::set_key_state(uint8_t key, bool is_pressed){
 void ChippyCore::executeOpcode() {
     //Fetch Opcode
     uint16_t OPCODE = (RAM[PC] << 8) | RAM[PC + 1];
-
     //Decode and execute
     switch (OPCODE & 0xF000) {
         case 0x0000:
@@ -220,7 +210,7 @@ void ChippyCore::executeOpcode() {
         break;
         case 0x2000:
             // 2NNN: Call subroutine at NNN
-            if (SP < 16) {
+            if (SP < MAX_16) {
                 STACK[SP++] = PC + 2; // Push the current PC onto the stack
                 PC = OPCODE & 0x0FFF;         // Jump to the address specified by the opcode
             } 
@@ -230,7 +220,7 @@ void ChippyCore::executeOpcode() {
         break;
         case 0x3000:
             // 3XNN: Skip next instruction if Vx equals NN
-            if (V[(OPCODE & 0x0F00) >> 8] == (OPCODE & 0x00FF)) {
+            if (V[(OPCODE & 0x0F00) >> MAX_8] == (OPCODE & 0x00FF)) {
                 PC += 4; // Skip next instruction
             } 
             else {
@@ -239,7 +229,7 @@ void ChippyCore::executeOpcode() {
         break;
         case 0x4000:
             // 4XNN: Skip next instruction if Vx does not equal NN
-            if (V[(OPCODE & 0x0F00) >> 8] != (OPCODE & 0x00FF)) {
+            if (V[(OPCODE & 0x0F00) >> MAX_8] != (OPCODE & 0x00FF)) {
                 PC += 4; // Skip next instruction
             } 
             else {
@@ -248,7 +238,7 @@ void ChippyCore::executeOpcode() {
         break;
         case 0x5000:
             // 5XY0: Skip next instruction if Vx equals Vy
-            if (V[(OPCODE & 0x0F00) >> 8] == V[(OPCODE & 0x00F0) >> 4]) {
+            if (V[(OPCODE & 0x0F00) >> MAX_8] == V[(OPCODE & 0x00F0) >> 4]) {
                 PC += 4;
             } 
             else {
@@ -257,12 +247,12 @@ void ChippyCore::executeOpcode() {
         break;
         case 0x6000:
             // 6XNN: Set Vx = NN
-            V[(OPCODE & 0x0F00) >> 8] = (OPCODE & 0x00FF);
+            V[(OPCODE & 0x0F00) >> MAX_8] = (OPCODE & 0x00FF);
             PC += 2;
         break;
         case 0x7000:{
             // 7XNN: Set Vx = Vx + NN
-            uint8_t X = (OPCODE & 0x0F00) >> 8;
+            uint8_t X = (OPCODE & 0x0F00) >> MAX_8;
             V[X] += (OPCODE & 0x00FF);
             PC += 2;
         }
@@ -272,12 +262,12 @@ void ChippyCore::executeOpcode() {
             switch (OPCODE & 0x000F) {
                 case 0x0:
                     // 8XY0: Set Vx = Vy
-                    V[(OPCODE & 0x0F00) >> 8] = V[(OPCODE & 0x00F0) >> 4];
+                    V[(OPCODE & 0x0F00) >> MAX_8] = V[(OPCODE & 0x00F0) >> 4];
                     PC += 2;
           
                 break;
                 case 0x1:{
-                    uint8_t X = (OPCODE & 0x0F00) >> 8;
+                    uint8_t X = (OPCODE & 0x0F00) >> MAX_8;
                     // 8XY1: Set Vx = Vx OR Vy
                     V[X] |= V[(OPCODE & 0x00F0) >> 4];
                     if(flag.get(QUIRK4)){
@@ -287,7 +277,7 @@ void ChippyCore::executeOpcode() {
                 }
                 break;
                 case 0x2:{
-                    uint8_t X = (OPCODE & 0x0F00) >> 8;
+                    uint8_t X = (OPCODE & 0x0F00) >> MAX_8;
                     // 8XY2: Set Vx = Vx AND Vy
                     V[X] &= V[(OPCODE & 0x00F0) >> 4];
                     if(flag.get(QUIRK4)){
@@ -297,7 +287,7 @@ void ChippyCore::executeOpcode() {
                 }
                 break;
                 case 0x3:{
-                    uint8_t X = (OPCODE & 0x0F00) >> 8;
+                    uint8_t X = (OPCODE & 0x0F00) >> MAX_8;
                     // 8XY3: Set Vx = Vx XOR Vy
                     V[X] ^= V[(OPCODE & 0x00F0) >> 4];
                     if(flag.get(QUIRK4)){
@@ -308,7 +298,7 @@ void ChippyCore::executeOpcode() {
                 break;
                 case 0x4: {
                     // 8XY4: Set Vx = Vx + Vy, set VF = carry
-                    uint8_t X = (OPCODE & 0x0F00) >> 8;
+                    uint8_t X = (OPCODE & 0x0F00) >> MAX_8;
                     uint8_t Y = (OPCODE & 0x00F0) >> 4;
                     V[0xF] = ((V[X] + V[Y]) > 0xFF) ? 1 : 0;
                     V[X] = (V[X] + V[Y]) & 0xFF;
@@ -317,7 +307,7 @@ void ChippyCore::executeOpcode() {
                 break;
                 case 0x5:{
                     // 8XY5: Set Vx = Vx - Vy, set VF = NOT borrow
-                    uint8_t X = (OPCODE & 0x0F00) >> 8;
+                    uint8_t X = (OPCODE & 0x0F00) >> MAX_8;
                     uint8_t Y = (OPCODE & 0x00F0) >> 4;
                     V[0xF] = (V[X] > V[Y]) ? 1 : 0;
                     V[X] -= V[Y];
@@ -327,7 +317,7 @@ void ChippyCore::executeOpcode() {
                 case 0x6:
                     // 8XY6: Set Vx = Vx SHR 1, set VF = least significant bit before shift
                     if(flag.get(QUIRK5)){
-                        uint8_t X = (OPCODE & 0x0F00) >> 8;
+                        uint8_t X = (OPCODE & 0x0F00) >> MAX_8;
                         V[0xF] = (V[X] & 0x1);
                         V[X] >>= 1;
                     }
@@ -339,7 +329,7 @@ void ChippyCore::executeOpcode() {
                     PC += 2;
                 break;
                 case 0x7:{
-                    uint8_t X = (OPCODE & 0x0F00) >> 8;
+                    uint8_t X = (OPCODE & 0x0F00) >> MAX_8;
                     uint8_t Y = (OPCODE & 0x00F0) >> 4;
                     // 8XY7: Set Vx = Vy - Vx, set VF = NOT borrow
                     V[0xF] = (V[Y] > V[X]) ? 1 : 0;
@@ -357,7 +347,7 @@ void ChippyCore::executeOpcode() {
                     else{
                         uint8_t Y = (OPCODE & 0x00F0) >> 4;
                         V[0xF] = (V[Y] & 0x80) ? 1 : 0;
-                        V[(OPCODE & 0x0F00) >> 8] = V[Y] << 1;
+                        V[(OPCODE & 0x0F00) >> MAX_8] = V[Y] << 1;
                     }
                     PC += 2;
                     
@@ -370,7 +360,7 @@ void ChippyCore::executeOpcode() {
         break;
         case 0x9000:
             // 9XY0: Skip next instruction if Vx != Vy
-            if (V[(OPCODE & 0x0F00) >> 8] != V[(OPCODE & 0x00F0) >> 4]) {
+            if (V[(OPCODE & 0x0F00) >> MAX_8] != V[(OPCODE & 0x00F0) >> 4]) {
                 PC += 4;
             } 
             else {
@@ -394,10 +384,10 @@ void ChippyCore::executeOpcode() {
         case 0xD000: {
             V[0xF] = 0; 
             uint8_t N = (OPCODE & 0x000F);
-            uint8_t X = (OPCODE & 0x0F00) >> 8;
+            uint8_t X = (OPCODE & 0x0F00) >> MAX_8;
             uint8_t Y = (OPCODE & 0x00F0) >> 4;
             for(uint8_t row = 0; row < N; row++){
-                for (uint8_t col = 0; col < 8; col++) {
+                for (uint8_t col = 0; col < MAX_8; col++) {
                     if (((RAM[INDEX + row]) & (0x80 >> col)) != 0) {
                         uint8_t x = V[X] + col;
                         uint8_t y = V[Y] + row;
@@ -428,7 +418,7 @@ void ChippyCore::executeOpcode() {
             // EX9E and EXA1: Key operations
             switch (OPCODE & 0x00FF) {
                 case 0x9E:
-                    if (is_key_pressed(V[(OPCODE & 0x0F00) >> 8])) {
+                    if (is_key_pressed(V[(OPCODE & 0x0F00) >> MAX_8])) {
                         PC += 4;
                     } 
                     else {
@@ -436,7 +426,7 @@ void ChippyCore::executeOpcode() {
                     }
                 break;
                 case 0xA1:
-                    if (!is_key_pressed(V[(OPCODE & 0x0F00) >> 8])) {
+                    if (!is_key_pressed(V[(OPCODE & 0x0F00) >> MAX_8])) {
                         PC += 4;
                     } 
                     else {
@@ -452,24 +442,24 @@ void ChippyCore::executeOpcode() {
         case 0xF000: {
             switch (OPCODE & 0x00FF) {
                 case 0x07:
-                    V[(OPCODE & 0x0F00) >> 8] = DELAYTIMER;
+                    V[(OPCODE & 0x0F00) >> MAX_8] = DELAYTIMER;
                     PC += 2;
                 break;
                 case 0x15:
                     // FX15: Set delay timer = Vx
-                    DELAYTIMER = V[(OPCODE & 0x0F00) >> 8];
+                    DELAYTIMER = V[(OPCODE & 0x0F00) >> MAX_8];
                     PC += 2;
                 break;
                 case 0x18:
                     // FX18: Set sound timer = Vx
-                    SOUNDTIMER = V[(OPCODE & 0x0F00) >> 8];
+                    SOUNDTIMER = V[(OPCODE & 0x0F00) >> MAX_8];
                     PC += 2;
                 break;
                 case 0x0A: { //FX0A - Wait for a key press and store the value of that pressed button in X */
                     int8_t pressedKey = get_pressed_key();
                     if (pressedKey != -1) {
-                        if(pressedKey >= 0 && pressedKey < 16){
-                            V[(OPCODE & 0x0F00) >> 8] = pressedKey;
+                        if(pressedKey >= 0 && pressedKey < MAX_16){
+                            V[(OPCODE & 0x0F00) >> MAX_8] = pressedKey;
                             PC += 2;
                         }
                         else{
@@ -480,26 +470,26 @@ void ChippyCore::executeOpcode() {
                 break;
                 case 0x1E:
                     // FX1E: Set I = I + Vx, set VF = carry
-                    INDEX += V[(OPCODE & 0x0F00) >> 8];
+                    INDEX += V[(OPCODE & 0x0F00) >> MAX_8];
                     V[0xF] = (INDEX > 0xFFF) ? 1 : 0;
                     INDEX &= 0xFFF;
                     PC += 2;
                 break;
                 case 0x29:
                     // FX29: Set I = location of sprite for digit Vx
-                    INDEX = 0x50 + (V[(OPCODE & 0x0F00) >> 8] * 5);
+                    INDEX = 0x50 + (V[(OPCODE & 0x0F00) >> MAX_8] * 5);
                     PC += 2;
                 break;
                 case 0x33:
                     // FX33: Store BCD representation of Vx in memory locations I, I+1, and I+2
-                    RAM[INDEX] = V[(OPCODE & 0x0F00) >> 8] / 100;
-                    RAM[INDEX + 1] = (V[(OPCODE & 0x0F00) >> 8] / 10) % 10;
-                    RAM[INDEX + 2] = V[(OPCODE & 0x0F00) >> 8] % 10;
+                    RAM[INDEX] = V[(OPCODE & 0x0F00) >> MAX_8] / 100;
+                    RAM[INDEX + 1] = (V[(OPCODE & 0x0F00) >> MAX_8] / 10) % 10;
+                    RAM[INDEX + 2] = V[(OPCODE & 0x0F00) >> MAX_8] % 10;
                     PC += 2;
                 break;
                 case 0x55:{
                     // FX55: Store registers V0 through Vx in memory starting at location I
-                    uint8_t X = (OPCODE & 0x0F00) >> 8;
+                    uint8_t X = (OPCODE & 0x0F00) >> MAX_8;
                     for (uint8_t reg1 = 0; reg1 <= X; ++reg1) {
                         RAM[INDEX + reg1] = V[reg1];
                     }
@@ -510,7 +500,7 @@ void ChippyCore::executeOpcode() {
                 }
                 break;
                 case 0x65:{
-                    uint8_t X = (OPCODE & 0x0F00) >> 8;
+                    uint8_t X = (OPCODE & 0x0F00) >> MAX_8;
                     // FX65: Read registers V0 through Vx from memory starting at location I
                     for (uint8_t reg1 = 0; reg1 <= X; ++reg1) {
                         V[reg1] = RAM[INDEX + reg1];

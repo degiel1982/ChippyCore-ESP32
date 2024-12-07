@@ -3,16 +3,7 @@
 
 #include <Arduino.h>
 #include "BitVault.h"
-
-#define RAM_SIZE 4096
-#define MAX_16 16
-#define MAX_8 8
-
-#define DEBUG 0
-#define START 1
-#define PAUSE 2
-#define CLEAR_DISPLAY 3
-#define SOUND_STATE 4
+#include "defines.h"
 
 ///***********************************************************************************************///
 ///                                       EMULATOR QUIRKS                                         ///
@@ -42,9 +33,9 @@ class ChippyCore{
         typedef void (*drawPixelCallback)(const uint16_t X, const uint16_t Y, bool& collisionDetection);
 
         //Method
-        void load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback callback, screenCallback callback1, keyCallback callback2,const bool* config, bool debug = false);
+        void load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback callback, screenCallback callback1, keyCallback callback2,const bool* config);
         bool isRunning();
-        void loop(bool debug = false);
+        void loop();
     private:
         //Ram
         uint8_t RAM[RAM_SIZE];
