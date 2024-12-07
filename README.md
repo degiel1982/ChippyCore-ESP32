@@ -1,147 +1,173 @@
-# ChippyCore Library
+# ChippyCore README
 
 ## Table of Contents
 1. [Introduction](#introduction)
-2. [Overview](#overview)
-3. [Public Methods](#public-methods)
-   - [play_game](#play_game)
-   - [stop](#stop)
-   - [pause](#pause)
-4. [Quirk Configuration](#quirk-configuration)
-5. [Examples](#examples)
-   - [Starting the Emulator](#example-1-starting-the-emulator)
-   - [Stopping the Emulator](#example-2-stopping-the-emulator)
-   - [Pausing and Resuming the Emulator](#example-3-pausing-and-resuming-the-emulator)
-
----
+2. [Getting Started](#getting-started)
+    - [System Requirements](#system-requirements)
+    - [Installation](#installation)
+3. [ChippyCore Overview](#chippycore-overview)
+4. [Using ChippyCore](#using-chippycore)
+    - [Loading and Running a ROM](#loading-and-running-a-rom)
+    - [Callback Functions](#callback-functions)
+    - [Quirks Configuration](#quirks-configuration)
+5. [Public Methods Reference](#public-methods-reference)
+6. [Examples](#examples)
 
 ## Introduction
-Welcome to the **ChippyCore Library**, a modern, lightweight, and customizable CHIP-8 emulator designed for developers, hobbyists, and retro computing enthusiasts. Whether you are exploring vintage games, building interactive projects, or studying emulation, ChippyCore provides a robust foundation for running CHIP-8 programs with ease.
+ChippyCore is an emulator core designed to run Chip-8 programs, a simple 8-bit virtual machine that was originally used on early 1970s computers. It provides a flexible and extensible way to simulate the behavior of the Chip-8 system, allowing developers to integrate it into various projects or create custom emulators.
 
-With its modular design and support for configurable quirks, ChippyCore faithfully replicates the behavior of various CHIP-8 implementations while allowing you to adapt the emulator to your specific needs. This library integrates seamlessly with hardware or software environments and provides user-friendly callbacks for rendering, input handling, and screen updates.
+## Getting Started
 
----
+### System Requirements
+- A C++ compatible development environment (e.g., Arduino IDE, Visual Studio Code with PlatformIO)
+- A basic understanding of C++ programming
 
-## Overview
-The **ChippyCore Library** is a CHIP-8 virtual machine emulator. It supports running CHIP-8 programs with customizable quirks and integrates callbacks for rendering, keyboard input, and screen updates.
+### Installation
+1. Clone the ChippyCore repository from GitHub.
+2. Include the `ChippyCore` folder in your project directory.
+3. Make sure to include the necessary header files and source files in your project.
 
----
+## ChippyCore Overview
+ChippyCore is designed to be modular and flexible, providing a set of public methods that allow developers to control the emulator's behavior. It supports loading Chip-8 ROMs, handling input/output operations, and configuring quirks specific to certain ROMs.
 
-## Public Methods
+## Using ChippyCore
 
-### 1. `play_game`
-**Description**: Starts the emulation of a CHIP-8 program. This method initializes the emulator, loads the ROM, and executes the game loop.
+### Loading and Running a ROM
+To load and run a Chip-8 ROM, you can use the `load_and_run` method provided by ChippyCore. This method takes several parameters:
+- The ROM data as a byte array.
+- The size of the ROM.
+- Callback functions for drawing pixels and updating the screen.
+- A callback function for handling user input (optional).
+- An array specifying quirks configurations specific to certain ROMs.
 
-**Parameters**:
-- `data` (const `uint8_t*`): Pointer to the CHIP-8 ROM data.
-- `dataSize` (size_t): Size of the ROM data.
-- `drawPixelCallback` (`drawPixelCallback`): Callback for rendering individual pixels.
-- `screenCallback` (`screenCallback`): Callback for handling screen updates.
-- `keyCallback` (`keyCallback`): Callback for managing key states (press/release simulation).
-- `config` (const `bool*`): Array to enable or disable specific quirks.
+```cpp
+void playGame(const uint8_t* rom, const size_t romSize, const bool* quirkconfig_game) {
+    ChippyCore cc;
+    cc.load_and_run(rom, romSize, &drawPixelCallback, &screenUpdateCallback, &loopCallback, quirkconfig_game);
+    while (cc.isRunning()) {
+        cc.loop();
+    }
+}
+```
 
----
+### Callback Functions
+ChippyCore requires callback functions to handle specific operations like drawing pixels and updating the screen. These functions should be implemented by the user:
 
-### 2. `stop`
-**Description**: Immediately stops the emulation. Useful for clean termination or resetting the emulator.
+- **drawPixelCallback**: Called when a pixel needs to be drawn on the screen with collision detection.
+- **screenUpdateCallback**: Called when the screen needs to be updated or cleared.
+- **loopCallback**: Optional callback for handling user input and controlling emulator state.
 
----
+```cpp
+void drawPixelCallback(const uint16_t X, const uint16_t Y, bool& collision) {
+    // Implement logic to draw a pixel on the screen with collision detection here
+}
 
-### 3. `pause`
-**Description**: Toggles the paused state of the emulator. While paused, the emulator halts execution cycles.
+void screenUpdateCallback(bool clearScreen, bool updateScreen) {
+    if (clearScreen) {
+        // Implement logic to clear the screen display here
+    }
+    if (updateScreen) {
+        // Implement logic to update the screen display here
+    }
+}
 
----
+void loopCallback(uint8_t& key, bool& key_state, bool& pause, bool& stop) {
+    // Implement logic for user input and emulator state control here
+}
+```
 
-## Quirk Configuration
-ChippyCore allows enabling/disabling specific quirks to match the behavior of different CHIP-8 variants.
+### Quirks Configuration
+Some Chip-8 ROMs require specific quirks to function correctly. ChippyCore allows you to configure these quirks using an array of boolean values:
 
-| Quirk   | Description                                                                                       |
-|---------|---------------------------------------------------------------------------------------------------|
-| `QUIRK4` | **Reset VF register behavior:** Enabled resets VF to `0` before operations; disabled retains VF. |
-| `QUIRK5` | **Shift behavior:** Enabled only shifts `vX`; disabled shifts `vX` and sets `vX` to `vY`.        |
-| `QUIRK6` | **Sprite wrapping/clipping:** Enabled wraps sprites at screen borders; disabled clips them.      |
-| `QUIRK11`| **I register increment:** Enabled increments `I` during certain instructions; disabled does not. |
+```cpp
+bool default_quirkconfig[5] = {   
+    false,  // COSMAC-based variants reset VF register to 0 before certain operations.
+            // Enabled: VF is reset to 0 before instructions that modify it. 
+            // Disabled: VF retains its previous value before such instructions. 
 
-The `config` array passed to `play_game` determines whether these quirks are enabled (`true`) or disabled (`false`).
+    false,  // QUIRK5: CHIP-48/SCHIP-1.x don't set vX to vY when shifting, so only shift vX.
 
----
+    false,  // Wrapping or clipping behavior for sprites. 
+            // Enabled: Sprites wrap around the screen borders. 
+            // Disabled: Sprites are clipped at the screen edges. 
+
+    false,  // Increment behavior for the I register. 
+            // Enabled: For CHIP-48/SCHIP-1.0, I is incremented by the value of X. For SCHIP-1.1, I is not incremented. 
+            // Disabled: I is not incremented in either case.
+};
+```
+
+## Public Methods Reference
+
+### `load_and_run`
+- **Description**: Loads a Chip-8 ROM and starts the emulator.
+- **Parameters**:
+  - `rom`: Pointer to the ROM data as a byte array.
+  - `romSize`: Size of the ROM.
+  - `drawPixelCallback`: Callback function for drawing pixels.
+  - `screenUpdateCallback`: Callback function for updating the screen.
+  - `loopCallback` (optional): Callback function for handling user input and emulator state control.
+  - `quirkconfig_game`: Array specifying quirks configurations specific to certain ROMs.
+
+### `isRunning`
+- **Description**: Checks if the emulator is currently running.
+- **Returns**: Boolean value indicating whether the emulator is running.
+
+### `loop`
+- **Description**: Executes a single cycle of the emulator, processing one opcode and updating the program counter accordingly.
+- **Parameters**: None
 
 ## Examples
+Here is an example of how to use ChippyCore to load and run a simple Chip-8 ROM:
 
-### Example 1: Starting the Emulator
 ```cpp
-#include "ChippyCore.h"
+#include "chippycore.h"
 
-// Define callbacks
-void drawPixel(const uint16_t X, const uint16_t Y, bool& collision) {
-    // Render a pixel on your screen
+// Callback function to draw a pixel on the screen with collision detection
+void drawPixelCallback(const uint16_t X, const uint16_t Y, bool& collision) {
+    // Implement logic to draw a pixel on the screen with collision detection here
 }
 
-void updateScreen(bool clear, bool update) {
-    if (clear) {
-        // Clear the screen
+// Callback function to update the screen display
+void screenUpdateCallback(bool clearScreen, bool updateScreen) {
+    if (clearScreen) {
+        // Implement logic to clear the screen display here
     }
-    if (update) {
-        // Update the screen display
-    }
-}
-
-// Simulate key presses/releases in the emulator
-void handleKey(uint8_t& key, bool& state) {
-    if (/* condition to press key */) {
-        key = 1;    // Key index to press
-        state = true; // Press key
-    } else if (/* condition to release key */) {
-        key = 1;    // Key index to release
-        state = false; // Release key
-    } else {
-        key = -1;   // No key change
+    if (updateScreen) {
+        // Implement logic to update the screen display here
     }
 }
 
-// Initialize core and ROM data
-ChippyCore core;
-const uint8_t romData[] = { /* Your CHIP-8 ROM data */ };
-bool config[4] = { true,  //Quirk 4
-                   false, //Quirk 5
-                   true,  //Quirk 6
-                   false  //Quirk 11
-                  }; // Quirk configuration
+void loopCallback(uint8_t& key, bool& key_state, bool& pause, bool& stop) {
+    // Implement logic for user input and emulator state control here
+}
+
+bool default_quirkconfig[5] = {   
+    false,
+    false,
+    false,
+    false
+};
+
+void playGame(const uint8_t* rom, const size_t romSize, const bool* quirkconfig_game) {
+    ChippyCore cc;
+    cc.load_and_run(rom, romSize, &drawPixelCallback, &screenUpdateCallback, &loopCallback, quirkconfig_game);
+    while (cc.isRunning()) {
+        cc.loop();
+    }
+}
 
 void setup() {
-    core.play_game(romData, sizeof(romData), drawPixel, updateScreen, handleKey, config);
+    Serial.begin(115200);
+    delay(1000);
 }
 
 void loop() {
-    // Loop logic is handled internally by play_game
+    // Example ROM data to be loaded
+    const uint8_t ROM[] = {0x12, 0x25};
+    // Start the game with the specified ROM
+    playGame(ROM, sizeof(ROM), default_quirkconfig);
 }
 ```
 
----
-
-### Example 2: Stopping the Emulator
-```cpp
-void stopGame() {
-    core.stop();
-    Serial.println("Emulation stopped.");
-}
-```
-
----
-
-### Example 3: Pausing and Resuming the Emulator
-```cpp
-void togglePause() {
-    core.pause();
-    Serial.println("Emulator paused or resumed.");
-}
-```
-
----
-
-### Notes on `handleKey`
-- The `key` parameter specifies the index of the key being simulated (0–15).
-- The `state` parameter specifies whether the key is pressed (`true`) or released (`false`).
-- To indicate no key press/release, set `key = -1`.
-
----
+This example demonstrates how to set up and run a simple Chip-8 program using ChippyCore. The callback functions need to be implemented based on your specific requirements for drawing pixels and handling user input.
