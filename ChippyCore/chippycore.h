@@ -41,7 +41,7 @@ class ChippyCore{
         uint8_t RAM[RAM_SIZE];
         
         //Registers
-        uint16_t PC; 
+        uint16_t PC;
         uint16_t INDEX;
         alignas(2) uint16_t STACK[MAX_16];
         uint8_t SP; 

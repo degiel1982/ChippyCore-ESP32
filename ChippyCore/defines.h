@@ -1,5 +1,6 @@
 #ifndef DEFINES_H
 #define DEFINES_H
+
     //CONSTANTS
     #define RAM_SIZE 4096
     #define MAX_16 16
