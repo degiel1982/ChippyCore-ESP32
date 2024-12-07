@@ -2,8 +2,6 @@
 
 #define ROM_START_ADDRESS 0x200
 #define FONTSET_START_ADDRESS 0x50 
-#define BITMASK_X 0x0F00
-#define EXTRACT_X(OPCODE) ((OPCODE & 0x0F00) >> 8)
 
 //ERROR CODES
 #define ERROR_ROM_SIZE 1
@@ -192,12 +190,14 @@ void ChippyCore::set_key_state(uint8_t key, bool is_pressed){
 }
 
 void ChippyCore::executeOpcode() {
+    //Fetch Opcode
     uint16_t OPCODE = (RAM[PC] << 8) | RAM[PC + 1];
+
+    //Decode and execute
     switch (OPCODE & 0xF000) {
         case 0x0000:
             switch (OPCODE & 0x00FF) {
-                case 0xE0:
-                    // 00E0: Clear the display
+                case 0xE0: // 00E0: Clear the display
                     flag.set(CLEAR_DISPLAY, true);
                     PC += 2;
                 break;
@@ -260,14 +260,15 @@ void ChippyCore::executeOpcode() {
             V[(OPCODE & 0x0F00) >> 8] = (OPCODE & 0x00FF);
             PC += 2;
         break;
-        case 0x7000:
+        case 0x7000:{
             // 7XNN: Set Vx = Vx + NN
-            V[(OPCODE & 0x0F00) >> 8] += (OPCODE & 0x00FF);
+            uint8_t X = (OPCODE & 0x0F00) >> 8;
+            V[X] += (OPCODE & 0x00FF);
             PC += 2;
+        }
         break;
         case 0x8000: {
             // 8XYN: Various arithmetic and logical operations
-           
             switch (OPCODE & 0x000F) {
                 case 0x0:
                     // 8XY0: Set Vx = Vy
@@ -286,7 +287,7 @@ void ChippyCore::executeOpcode() {
                 }
                 break;
                 case 0x2:{
-                    uint8_t X = EXTRACT_X(OPCODE);
+                    uint8_t X = (OPCODE & 0x0F00) >> 8;
                     // 8XY2: Set Vx = Vx AND Vy
                     V[X] &= V[(OPCODE & 0x00F0) >> 4];
                     if(flag.get(QUIRK4)){
@@ -308,8 +309,9 @@ void ChippyCore::executeOpcode() {
                 case 0x4: {
                     // 8XY4: Set Vx = Vx + Vy, set VF = carry
                     uint8_t X = (OPCODE & 0x0F00) >> 8;
-                    V[0xF] = ((V[X] + V[(OPCODE & 0x00F0) >> 4]) > 0xFF) ? 1 : 0;
-                    V[X] = (V[X] + V[(OPCODE & 0x00F0) >> 4]) & 0xFF;
+                    uint8_t Y = (OPCODE & 0x00F0) >> 4;
+                    V[0xF] = ((V[X] + V[Y]) > 0xFF) ? 1 : 0;
+                    V[X] = (V[X] + V[Y]) & 0xFF;
                     PC += 2;
                 } 
                 break;
@@ -368,7 +370,7 @@ void ChippyCore::executeOpcode() {
         break;
         case 0x9000:
             // 9XY0: Skip next instruction if Vx != Vy
-            if (V[(OPCODE & BITMASK_X) >> MAX_8] != V[(OPCODE & 0x00F0) >> 4]) {
+            if (V[(OPCODE & 0x0F00) >> 8] != V[(OPCODE & 0x00F0) >> 4]) {
                 PC += 4;
             } 
             else {
@@ -392,7 +394,7 @@ void ChippyCore::executeOpcode() {
         case 0xD000: {
             V[0xF] = 0; 
             uint8_t N = (OPCODE & 0x000F);
-            uint8_t X = EXTRACT_X(OPCODE);
+            uint8_t X = (OPCODE & 0x0F00) >> 8;
             uint8_t Y = (OPCODE & 0x00F0) >> 4;
             for(uint8_t row = 0; row < N; row++){
                 for (uint8_t col = 0; col < 8; col++) {
@@ -464,10 +466,15 @@ void ChippyCore::executeOpcode() {
                     PC += 2;
                 break;
                 case 0x0A: { //FX0A - Wait for a key press and store the value of that pressed button in X */
-                  int8_t pressedKey = get_pressed_key();
+                    int8_t pressedKey = get_pressed_key();
                     if (pressedKey != -1) {
-                        V[(OPCODE & 0x0F00) >> 8] = pressedKey;
+                        if(pressedKey >= 0 && pressedKey < 16){
+                            V[(OPCODE & 0x0F00) >> 8] = pressedKey;
                             PC += 2;
+                        }
+                        else{
+                            handleError(ERROR_USER_KEYPRESS);
+                        }
                     }  
                 } 
                 break;
@@ -483,11 +490,6 @@ void ChippyCore::executeOpcode() {
                     INDEX = 0x50 + (V[(OPCODE & 0x0F00) >> 8] * 5);
                     PC += 2;
                 break;
-                case 0x30:
-                    // FX30: Set I = location of 10-byte font sprite for digit Vx (SCHIP)
-                    INDEX = 0xA0 + (V[(OPCODE & 0x0F00) >> 8] * 10);
-                    PC += 2;
-                    break;
                 case 0x33:
                     // FX33: Store BCD representation of Vx in memory locations I, I+1, and I+2
                     RAM[INDEX] = V[(OPCODE & 0x0F00) >> 8] / 100;
