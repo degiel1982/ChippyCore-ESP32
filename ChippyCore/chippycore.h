@@ -1,9 +1,6 @@
 #ifndef CHIPPYCORE_H
 #define CHIPPYCORE_H
 
-#include <cstdint>
-#include <iostream>
-
 #include <Arduino.h>
 #include "BitVault.h"
 #include "defines.h"
