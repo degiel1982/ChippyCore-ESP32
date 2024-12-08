@@ -42,15 +42,17 @@ bool default_quirkconfig[5] =  {
                                   // Disabled: I is not incremented in either case.
 };
 
+// Function to print free memory on the serial port for debugging purposes 
 void showFreeMemory(){
     UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(NULL); // Get the high-water mark for this task 
     Serial.print("Free stack space: "); 
-    Serial.println(highWaterMark);
+    Serial.println(highWaterMark); 
     Serial.print("Initial free heap: "); 
     Serial.println(xPortGetFreeHeapSize()); 
     Serial.print("Minimum ever free heap: "); 
     Serial.println(xPortGetMinimumEverFreeHeapSize());
 }
+
 
 void playGame(const uint8_t* rom, const size_t romSize, const bool* quirkconfig_game){
     #ifdef USE_STACK
