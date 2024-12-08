@@ -81,7 +81,9 @@ void ChippyCore::loopCycle(){
         bool key_state = false;
         bool pause = flag.get(PAUSE);
         bool stop = false;
-        kcb(key,key_state,pause,stop);
+        if(_lCallback){
+            _lCallback(key,key_state,pause,stop);
+        }
         if(flag.get(PAUSE) != pause){
             flag.set(PAUSE, pause);
         }
@@ -168,8 +170,8 @@ void ChippyCore::cycle(){
         }
         if(flag.get(CLEAR_DISPLAY)){
           flag.set(CLEAR_DISPLAY,false);
-          if(scb){
-              scb(1,0);
+          if(_sCallback){
+              _sCallback(1,0);
           }
         }
 
@@ -417,8 +419,8 @@ void ChippyCore::executeOpcode() {
                             continue;
                         }   
                         bool collision = false;
-                        if (dpcb) {   
-                            dpcb(x, y, collision);
+                        if (_dCallback) {   
+                            _dCallback(x, y, collision);
                         }
                         if (collision) {
                             V[0xF] = 1;
@@ -426,8 +428,8 @@ void ChippyCore::executeOpcode() {
                     }
                 }
             }
-            if (scb) {
-                scb(false, true);
+            if (_sCallback) {
+                _sCallback(false, true);
             }
             PC += 2;
         } 
