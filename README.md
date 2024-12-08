@@ -64,8 +64,8 @@ The Chip8 language has several quirks that can affect how certain instructions b
 - **Disabled:** Sprites are clipped at the screen edges.
 
 ### Quirk 11 (QUIRK11)
-- **Enabled:** For CHIP-48/SCHIP-1.0, I is incremented by the value of X. For SCHIP-1.1, I is not incremented.
-- **Disabled:** I is not incremented in either case.
+- **Enabled:** I is incremented by the value of X. 
+- **Disabled:** I is not incremented.
 
 ## Usage Guide
 To use ChippyCore, you need to include the `ChippyCore.h` file and set up your Arduino sketch to handle callbacks for drawing pixels, screen updates, and input handling.
