@@ -83,5 +83,3 @@ void loop() {
     // Start the game with the specified ROM
     playGame(ROM, sizeof(ROM), default_quirkconfig);
 }
-
-

@@ -36,16 +36,16 @@ void ChippyCore::stopEmulator(){
 bool ChippyCore::isRunning(){
     return flag.get(START);
 }
-void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb, loopCallback kkcb, const bool* config){
+void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback dCallback, screenCallback sCallback, loopCallback lCallback, const bool* config){
     //init the callbacks
-    if(dwpcb){
-        dpcb = dwpcb;
+    if(dCallback){
+        _dCallback = dCallback;
     }
-    if(sccb){
-        scb = sccb;
+    if(sCallback){
+        _sCallback = sCallback;
     }
-    if(kkcb){
-        kcb = kkcb;
+    if(lCallback){
+        _lCallback = lCallback;
     }
     
     //init the chip8 emulator

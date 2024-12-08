@@ -50,9 +50,9 @@ class ChippyCore{
         uint8_t V[MAX_16];
         
         //Define Callbacks
-        drawPixelCallback dpcb;
-        screenCallback scb;
-        loopCallback kcb;
+        drawPixelCallback _dCallback;
+        screenCallback _sCallback;
+        loopCallback _lCallback;
 
 
         //Old cycle time variables 
