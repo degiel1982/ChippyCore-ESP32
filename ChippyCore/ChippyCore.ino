@@ -1,6 +1,6 @@
 #include "chippycore.h"
 
-#define USE_STACK
+//#define USE_STACK
 
 #ifndef USE_STACK
     ChippyCore cc;
@@ -21,7 +21,7 @@ void screenUpdateCallback(bool clearScreen, bool updateScreen){
     }
 }
 
-void loopCallback(uint8_t& key, bool& key_state, bool& pause, bool& stop){
+void loopCallback(uint8_t& keySet, bool& keyState, bool& pause, bool& stop){
 }
 
 //There are some roms that needs those quirks.

@@ -36,7 +36,8 @@ void ChippyCore::stopEmulator(){
 bool ChippyCore::isRunning(){
     return flag.get(START);
 }
-void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb, keyCallback kkcb, const bool* config){
+void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback dwpcb, screenCallback sccb, loopCallback kkcb, const bool* config){
+    //init the callbacks
     if(dwpcb){
         dpcb = dwpcb;
     }
@@ -46,11 +47,15 @@ void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCal
     if(kkcb){
         kcb = kkcb;
     }
+    
+    //init the chip8 emulator
     initialize();
+
     flag.set(QUIRK4, config[0]);
     flag.set(QUIRK5, config[1]);
     flag.set(QUIRK6, config[2]);
     flag.set(QUIRK11, config[3]);
+
     uint8_t error = load_rom(data, dataSize);
     if(error){
         handleError(error);
@@ -58,6 +63,7 @@ void ChippyCore::load_and_run(const uint8_t* data, size_t dataSize, drawPixelCal
     }
     flag.set(START,true);      
 }
+
 void ChippyCore::loop(){
     if(isRunning()){
         loopCycle(); // When running paused or not paused it will always run
@@ -288,7 +294,7 @@ void ChippyCore::executeOpcode() {
                     PC += 2;
                 }
                 break;
-                case 0x2:{
+                case 0x2:{ // 8XY2: 
                     uint8_t X = (OPCODE & 0x0F00) >> MAX_8;
                     // 8XY2: Set Vx = Vx AND Vy
                     V[X] &= V[(OPCODE & 0x00F0) >> 4];

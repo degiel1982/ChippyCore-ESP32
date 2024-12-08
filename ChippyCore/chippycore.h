@@ -29,11 +29,11 @@ class ChippyCore{
     
         //Define Callbacks
         typedef void (*screenCallback)(bool clearScreen, bool updateScreen);
-        typedef void (*keyCallback)(uint8_t& key_set, bool& key_state, bool& pause, bool& stop);
-        typedef void (*drawPixelCallback)(const uint16_t X, const uint16_t Y, bool& collisionDetection);
+        typedef void (*loopCallback)(uint8_t& keySet, bool& keyState, bool& pause, bool& stop);
+        typedef void (*drawPixelCallback)(const uint16_t x, const uint16_t y, bool& collisionDetection);
 
         //Method
-        void load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback callback, screenCallback callback1, keyCallback callback2,const bool* config);
+        void load_and_run(const uint8_t* data, size_t dataSize, drawPixelCallback dCallback, screenCallback sCallback, loopCallback lCallback,const bool* config);
         bool isRunning();
         void loop();
     private:
@@ -52,7 +52,8 @@ class ChippyCore{
         //Define Callbacks
         drawPixelCallback dpcb;
         screenCallback scb;
-        keyCallback kcb;
+        loopCallback kcb;
+
 
         //Old cycle time variables 
         uint32_t last_cpu_cycle;  ///< Timestamp of the last CPU cycle
